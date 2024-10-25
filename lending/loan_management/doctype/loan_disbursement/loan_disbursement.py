@@ -573,7 +573,7 @@ class LoanDisbursement(AccountsController):
 		else:
 			bank_account = self.disbursement_account
 
-		if not cancel:
+		if not cancel or self.applicant_type == "Employee":
 			self.add_gl_entry(gle_map, self.loan_account, bank_account, self.disbursed_amount, remarks)
 
 		if self.withhold_security_deposit:
