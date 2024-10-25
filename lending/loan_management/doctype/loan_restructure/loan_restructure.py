@@ -427,7 +427,7 @@ class LoanRestructure(AccountsController):
 
 		draft_schedule = frappe.db.get_value("Loan Repayment Schedule", filters, "name")
 		if draft_schedule:
-			schedule = frappe.get_doc("Loan Repayment Schedule", draft_schedule)
+			schedule = frappe.get_doc("Loan Repayment Schedule", draft_schedule, for_update=True)
 			schedule.update(self.get_schedule_details(adjusted_interest))
 			schedule.save()
 		else:
