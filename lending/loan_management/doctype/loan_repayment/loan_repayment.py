@@ -1907,7 +1907,6 @@ def get_bulk_due_details(loans, posting_date):
 		if loan.repayment_schedule_type == "Line of Credit":
 			demands = demand_map.get(loan.name, [])
 			for disbursement in disbursement_map.get(loan.name, []):
-				print(disbursement, "###########")
 				amounts = init_amounts()
 				principal_amount = principal_amount_map.get((loan.name, disbursement), 0)
 				unbooked_interest = unbooked_interest_map.get((loan.name, disbursement), 0)
@@ -1981,7 +1980,10 @@ def calculate_amounts(
 		)
 		amounts["penalty_amount"] = amounts["penalty_amount"] + amounts["unbooked_penalty"]
 		amounts["payable_amount"] = (
-			amounts["payable_principal_amount"] + amounts["interest_amount"] + amounts["penalty_amount"]
+			amounts["payable_principal_amount"]
+			+ amounts["interest_amount"]
+			+ amounts["penalty_amount"]
+			+ amounts.get("total_charges_payable", 0)
 		)
 
 	if with_loan_details:
