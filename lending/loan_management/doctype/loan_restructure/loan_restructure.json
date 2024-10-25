@@ -21,6 +21,7 @@
   "restructure_date",
   "reason_for_restructure",
   "old_repayment_frequency",
+  "moratorium_end_date",
   "loan_details_section",
   "loan_product",
   "old_tenure",
@@ -521,12 +522,17 @@
    "fieldname": "old_repayment_frequency",
    "fieldtype": "Data",
    "label": "Old Repayment Frequency"
+  },
+  {
+   "fieldname": "moratorium_end_date",
+   "fieldtype": "Date",
+   "label": "Moratorium End Date"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-15 19:17:39.225483",
+ "modified": "2024-10-25 19:04:21.913899",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Restructure",

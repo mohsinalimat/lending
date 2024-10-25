@@ -439,6 +439,7 @@ class LoanRestructure(AccountsController):
 			"loan_restructure": self.name,
 			"repayment_method": self.new_repayment_method,
 			"repayment_start_date": self.repayment_start_date,
+			"moratorium_end_date": self.moratorium_end_date,
 			"repayment_periods": self.new_repayment_period_in_months,
 			"monthly_repayment_amount": self.new_monthly_repayment_amount,
 			"rate_of_interest": self.new_rate_of_interest,
@@ -661,6 +662,7 @@ def get_restructure_details(
 		pending_tenure,
 		monthly_repayment_amount,
 		repayment_start_date,
+		moratorium_end_date,
 	) = get_pending_tenure_and_start_date(
 		loan, posting_date, repayment_type, loan_disbursement=loan_disbursement
 	)
@@ -670,6 +672,7 @@ def get_restructure_details(
 		"restructure_type": repayment_type,
 		"restructure_date": posting_date,
 		"repayment_start_date": repayment_start_date,
+		"moratorium_end_date": moratorium_end_date,
 		"principal_adjusted": principal_adjusted,
 		"loan_disbursement": loan_disbursement,
 	}
@@ -695,24 +698,48 @@ def get_pending_tenure_and_start_date(loan, posting_date, repayment_type, loan_d
 		filters["loan_disbursement"] = loan_disbursement
 
 	(
+		schedule,
 		prev_tenure,
 		monthly_repayment_amount,
 		repayment_frequency,
 		prev_repayment_start_date,
+		repayment_schedule_type,
+		moratorium_end_date,
 	) = frappe.db.get_value(
 		"Loan Repayment Schedule",
 		filters,
-		["repayment_periods", "monthly_repayment_amount", "repayment_frequency", "repayment_start_date"],
+		[
+			"name",
+			"repayment_periods",
+			"monthly_repayment_amount",
+			"repayment_frequency",
+			"repayment_start_date",
+			"repayment_schedule_type",
+			"moratorium_end_date",
+		],
 	)
 
 	loan_product = frappe.db.get_value("Loan", loan, "loan_product")
 
 	if repayment_frequency == "One Time":
 		repayment_start_date = prev_repayment_start_date
-	else:
+	elif repayment_schedule_type in "Monthly as per cycle date":
 		if repayment_type == "Pre Payment":
 			ignore_bpi = True
 
 		repayment_start_date = get_cyclic_date(loan_product, posting_date, ignore_bpi=ignore_bpi)
+	else:
+		if getdate(posting_date) <= getdate(prev_repayment_start_date):
+			repayment_start_date = prev_repayment_start_date
+		else:
+			repayment_start_date = frappe.db.get_value(
+				"Repayment Schedule",
+				{"parent": schedule, "payment_date": (">=", "posting_date")},
+				["payment_date"],
+				order_by="payment_date",
+			)
 
-	return prev_tenure, monthly_repayment_amount, repayment_start_date
+	if moratorium_end_date and getdate(posting_date) > getdate(moratorium_end_date):
+		moratorium_end_date = None
+
+	return prev_tenure, monthly_repayment_amount, repayment_start_date, moratorium_end_date

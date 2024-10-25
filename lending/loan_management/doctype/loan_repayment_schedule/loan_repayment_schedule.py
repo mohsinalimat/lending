@@ -266,17 +266,18 @@ class LoanRepaymentSchedule(Document):
 		else:
 			monthly_repayment_amount = self.monthly_repayment_amount
 
-		if (
-			self.moratorium_tenure
-			and self.repayment_frequency == "Monthly"
-			and self.repayment_schedule_type == "Monthly as per cycle date"
-		):
-			payment_date = add_months(self.repayment_start_date, -1 * self.moratorium_tenure)
-			self.moratorium_end_date = add_months(self.repayment_start_date, -1)
-		elif self.moratorium_tenure and self.repayment_frequency == "Monthly":
-			self.moratorium_end_date = add_months(self.repayment_start_date, self.moratorium_tenure)
-			if self.repayment_schedule_type == "Pro-rated calendar months":
-				self.moratorium_end_date = add_days(self.moratorium_end_date, -1)
+		if not self.restructure_type:
+			if (
+				self.moratorium_tenure
+				and self.repayment_frequency == "Monthly"
+				and self.repayment_schedule_type == "Monthly as per cycle date"
+			):
+				payment_date = add_months(self.repayment_start_date, -1 * self.moratorium_tenure)
+				self.moratorium_end_date = add_months(self.repayment_start_date, -1)
+			elif self.moratorium_tenure and self.repayment_frequency == "Monthly":
+				self.moratorium_end_date = add_months(self.repayment_start_date, self.moratorium_tenure)
+				if self.repayment_schedule_type == "Pro-rated calendar months":
+					self.moratorium_end_date = add_days(self.moratorium_end_date, -1)
 
 		tenure = self.get_applicable_tenure(payment_date)
 		additional_days = cint(self.broken_period_interest_days)
@@ -342,7 +343,7 @@ class LoanRepaymentSchedule(Document):
 				row = row + 1
 
 			if (
-				self.moratorium_tenure and self.repayment_frequency == "Monthly" and not self.restructure_type
+				self.moratorium_end_date and self.moratorium_tenure and self.repayment_frequency == "Monthly"
 			):
 				if getdate(payment_date) <= getdate(self.moratorium_end_date):
 					principal_amount = 0
@@ -460,6 +461,18 @@ class LoanRepaymentSchedule(Document):
 		balance_principal_amount = self.current_principal_amount
 		additional_principal_amount = 0
 		pending_prev_days = 0
+
+		if (
+			self.moratorium_end_date
+			and getdate(self.posting_date) <= getdate(self.moratorium_end_date)
+			and self.restructure_type
+		):
+			return (
+				previous_interest_amount,
+				balance_principal_amount,
+				additional_principal_amount,
+				pending_prev_days,
+			)
 
 		loan_status = frappe.db.get_value("Loan", self.loan, "status")
 		if (
@@ -627,10 +640,7 @@ class LoanRepaymentSchedule(Document):
 							self.current_principal_amount * flt(self.rate_of_interest) * pending_prev_days / (36500)
 						)
 
-						if (
-							self.current_principal_amount > self.monthly_repayment_amount
-							or self.repayment_frequency != "One Time"
-						):
+						if self.current_principal_amount > self.monthly_repayment_amount:
 							principal_amount = self.monthly_repayment_amount - interest_amount
 						else:
 							principal_amount = self.current_principal_amount
@@ -664,7 +674,7 @@ class LoanRepaymentSchedule(Document):
 		)
 
 	def set_repayment_start_date(self):
-		if self.repayment_schedule_type == "Pro-rated calendar months":
+		if self.repayment_schedule_type == "Pro-rated calendar months" and not self.restructure_type:
 			repayment_start_date = get_last_day(self.posting_date)
 			if self.repayment_date_on == "Start of the next month":
 				repayment_start_date = add_days(repayment_start_date, 1)
