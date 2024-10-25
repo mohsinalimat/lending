@@ -39,6 +39,7 @@ class LoanRepayment(AccountsController):
 			loan_disbursement=self.loan_disbursement,
 		)
 		self.set_missing_values(amounts)
+		self.validate_repayment_type()
 		self.validate_disbursement_link()
 		self.check_future_entries()
 		self.validate_security_deposit_amount()
@@ -525,12 +526,19 @@ class LoanRepayment(AccountsController):
 
 	def validate_repayment_type(self):
 		loan_status = frappe.db.get_value("Loan", self.against_loan, "status")
+
 		if loan_status == "Written Off":
 			if (
 				self.repayment_type not in ("Write Off Recovery", "Write Off Settlement")
 				and not self.is_write_off_waiver
 			):
 				frappe.throw(_("Repayment type can only be Write Off Recovery or Write Off Settlement"))
+		elif self.repayment_type == "Normal Repayment":
+			validate_repayment = frappe.get_cached_value(
+				"Loan Product", self.loan_product, "validate_normal_repayment"
+			)
+			if validate_repayment and self.amount_paid > self.payable_amount:
+				frappe.throw(_("Amount paid cannot be greater than payable amount"))
 		elif loan_status != "Settled":
 			if self.repayment_type in ("Write Off Recovery", "Write Off Settlement"):
 				frappe.throw(_("Incorrect repayment type, please write off the loan first"))

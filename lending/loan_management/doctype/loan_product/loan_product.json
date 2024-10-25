@@ -20,6 +20,7 @@
   "column_break_2",
   "company",
   "is_term_loan",
+  "validate_normal_repayment",
   "disabled",
   "repayment_schedule_type",
   "cyclic_day_of_the_month",
@@ -315,10 +316,10 @@
    "reqd": 1
   },
   {
-    "default": "0",
-    "fieldname": "same_as_regular_interest_accounts",
-    "fieldtype": "Check",
-    "label": "Same as regular interest accounts"
+   "default": "0",
+   "fieldname": "same_as_regular_interest_accounts",
+   "fieldtype": "Check",
+   "label": "Same as regular interest accounts"
   },
   {
    "fieldname": "broken_period_interest_recovery_account",
@@ -439,11 +440,17 @@
    "fieldtype": "Link",
    "label": "Customer Refund Account",
    "options": "Account"
+  },
+  {
+   "default": "0",
+   "fieldname": "validate_normal_repayment",
+   "fieldtype": "Check",
+   "label": "Validate Normal Repayment"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-19 08:07:07.120674",
+ "modified": "2024-10-25 11:18:12.517166",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Product",
