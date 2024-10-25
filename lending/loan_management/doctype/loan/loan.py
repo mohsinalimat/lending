@@ -1277,7 +1277,9 @@ def get_base_charge_amount(
 def make_journal_entry(
 	posting_date, company, loan, amount, debit_account, credit_account, is_reverse=0
 ):
-	if not flt(amount):
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
+
+	if not flt(amount, precision):
 		return
 
 	# Swap Accounts
