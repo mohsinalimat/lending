@@ -420,9 +420,12 @@ class LoanRestructure(AccountsController):
 		if self.unaccrued_interest_treatment == "Add To First EMI":
 			adjusted_interest += self.balance_unaccrued_interest
 
-		draft_schedule = frappe.db.get_value(
-			"Loan Repayment Schedule", {"loan_restructure": self.name, "docstatus": 0}, "name"
-		)
+		filters = {"loan_restructure": self.name, "docstatus": 0}
+
+		if self.loan_disbursement:
+			filters["loan_disbursement"] = self.loan_disbursement
+
+		draft_schedule = frappe.db.get_value("Loan Repayment Schedule", filters, "name")
 		if draft_schedule:
 			schedule = frappe.get_doc("Loan Repayment Schedule", draft_schedule)
 			schedule.update(self.get_schedule_details(adjusted_interest))
