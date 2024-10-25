@@ -627,7 +627,10 @@ class LoanRepaymentSchedule(Document):
 							self.current_principal_amount * flt(self.rate_of_interest) * pending_prev_days / (36500)
 						)
 
-						if self.current_principal_amount > self.monthly_repayment_amount:
+						if (
+							self.current_principal_amount > self.monthly_repayment_amount
+							or self.repayment_frequency != "One Time"
+						):
 							principal_amount = self.monthly_repayment_amount - interest_amount
 						else:
 							principal_amount = self.current_principal_amount
