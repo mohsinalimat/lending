@@ -275,7 +275,7 @@ def make_loan_demand_for_term_loans(
 					title="Loan Demand Generation Error",
 					message=frappe.get_traceback(),
 					reference_doctype="Loan",
-					reference_name=row.parent,
+					reference_name=loan_repayment_schedule_map.get(row.parent),
 				)
 			else:
 				raise e
