@@ -966,7 +966,10 @@ def update_all_linked_loan_customer_npa_status(
 	via_background_job=False,
 ):
 	"""Update NPA status of all linked customers"""
-	if not via_background_job:
+
+	prev_npa = frappe.db.get_value("Loan", loan, "is_npa")
+
+	if not via_background_job and prev_npa != is_npa:
 		update_npa_check(is_npa, applicant_type, applicant, posting_date, manual_npa=manual_npa)
 	else:
 		update_value = {
