@@ -292,6 +292,7 @@ class LoanRepayment(AccountsController):
 				"Principal",
 				flt(amount, precision),
 				paid_amount=flt(amount, precision),
+				loan_disbursement=self.loan_disbursement,
 			)
 
 	def process_reschedule(self):
@@ -598,6 +599,7 @@ class LoanRepayment(AccountsController):
 				"Interest",
 				flt(self.unbooked_interest_paid, precision),
 				paid_amount=self.unbooked_interest_paid,
+				loan_disbursement=self.loan_disbursement,
 			)
 
 		if flt(self.unbooked_penalty_paid, precision) > 0:
@@ -608,6 +610,7 @@ class LoanRepayment(AccountsController):
 				"Penalty",
 				flt(self.unbooked_penalty_paid, precision),
 				paid_amount=self.unbooked_penalty_paid,
+				loan_disbursement=self.loan_disbursement,
 			)
 
 	def update_paid_amounts(self):
