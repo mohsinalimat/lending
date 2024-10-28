@@ -85,4 +85,4 @@ class LoanRepaymentRepost(Document):
 				on_payment_allocation=True,
 			)
 
-			reverse_demands(self.against_loan, add_days(self.repost_date, 1), demand_type="Penalty")
+			reverse_demands(self.loan, add_days(self.repost_date, 1), demand_type="Penalty")
