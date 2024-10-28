@@ -1,0 +1,101 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-10-28 13:03:00.901376",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_kcrv",
+  "loan",
+  "loan_disbursement",
+  "column_break_bmnx",
+  "repost_date",
+  "loan_repayment_entries_section",
+  "repayment_entries",
+  "section_break_kbry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_kcrv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Loan Repayment Repost",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "loan",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Loan",
+   "options": "Loan",
+   "reqd": 1
+  },
+  {
+   "fieldname": "loan_disbursement",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Loan Disbursement",
+   "options": "Loan Disbursement"
+  },
+  {
+   "fieldname": "column_break_bmnx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "All entries on and after this date will be reposted",
+   "fieldname": "repost_date",
+   "fieldtype": "Date",
+   "in_standard_filter": 1,
+   "label": "Repost Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "loan_repayment_entries_section",
+   "fieldtype": "Section Break",
+   "label": "Loan Repayment Entries"
+  },
+  {
+   "fieldname": "section_break_kbry",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "repayment_entries",
+   "fieldtype": "Table",
+   "options": "Loan Repayment Repost Detail"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-10-28 13:28:18.762645",
+ "modified_by": "Administrator",
+ "module": "Loan Management",
+ "name": "Loan Repayment Repost",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
