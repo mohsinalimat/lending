@@ -23,6 +23,7 @@ def get_pending_principal_amount_for_loans(loans, disbursement_map):
 				principal_amount_map[(loan.name, disbursement)] = disbursement_details.get(disbursement, 0)
 		elif loan.status == "Cancelled":
 			pending_principal_amount = 0
+			principal_amount_map[loan.name] = pending_principal_amount
 		elif loan.status in ("Disbursed", "Closed", "Active", "Written Off"):
 			pending_principal_amount = flt(
 				flt(loan.total_payment)
@@ -32,6 +33,8 @@ def get_pending_principal_amount_for_loans(loans, disbursement_map):
 				- flt(loan.total_interest_payable),
 				precision,
 			)
+			principal_amount_map[loan.name] = pending_principal_amount
+
 		else:
 			pending_principal_amount = flt(
 				flt(loan.disbursed_amount)
@@ -41,7 +44,7 @@ def get_pending_principal_amount_for_loans(loans, disbursement_map):
 				precision,
 			)
 
-		principal_amount_map[loan.name] = pending_principal_amount
+			principal_amount_map[loan.name] = pending_principal_amount
 
 	return principal_amount_map
 
