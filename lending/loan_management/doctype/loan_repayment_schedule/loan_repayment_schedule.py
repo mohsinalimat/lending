@@ -185,6 +185,7 @@ class LoanRepaymentSchedule(Document):
 			pending_prev_days,
 		) = self.add_rows_from_prev_disbursement("repayment_schedule", 100, 100)
 
+		print(balance_amount, "##############")
 		self.make_repayment_schedule(
 			"repayment_schedule",
 			previous_interest_amount,
@@ -341,7 +342,7 @@ class LoanRepaymentSchedule(Document):
 			):
 				if getdate(payment_date) <= getdate(self.moratorium_end_date):
 					principal_amount = 0
-					balance_amount = self.loan_amount
+					balance_amount = self.current_principal_amount
 					moratorium_interest += interest_amount
 
 					if self.moratorium_type == "EMI":
