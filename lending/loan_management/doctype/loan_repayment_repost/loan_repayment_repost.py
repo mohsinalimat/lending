@@ -3,6 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import add_days
 
 from lending.loan_management.doctype.loan_repayment.loan_repayment import calculate_amounts
 
@@ -43,6 +44,11 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.make_gl_entries(cancel=1)
 
 	def trigger_on_submit_events(self):
+		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
+		from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
+			reverse_loan_interest_accruals,
+		)
+
 		for entry in self.get("repayment_entries"):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 			repayment_doc.docstatus = 1
@@ -69,3 +75,14 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.update_paid_amounts()
 			repayment_doc.update_demands()
 			repayment_doc.make_gl_entries()
+
+		if self.reverse_future_penal_accruals_and_demands:
+			reverse_loan_interest_accruals(
+				self.loan,
+				self.repost_date,
+				interest_type="Penal Interest",
+				is_npa=0,
+				on_payment_allocation=True,
+			)
+
+			reverse_demands(self.against_loan, add_days(self.repost_date, 1), demand_type="Penalty")
