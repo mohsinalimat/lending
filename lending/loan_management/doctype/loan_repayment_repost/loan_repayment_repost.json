@@ -10,7 +10,7 @@
   "loan_disbursement",
   "column_break_bmnx",
   "repost_date",
-  "reverse_future_penal_accruals_and_demands",
+  "cancel_future_penal_accruals_and_demands",
   "loan_repayment_entries_section",
   "repayment_entries",
   "section_break_kbry",
@@ -74,15 +74,15 @@
   },
   {
    "default": "0",
-   "fieldname": "reverse_future_penal_accruals_and_demands",
+   "fieldname": "cancel_future_penal_accruals_and_demands",
    "fieldtype": "Check",
-   "label": "Reverse Future Penal Accruals and Demands "
+   "label": "Cancel Future Penal Accruals and Demands "
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-28 18:18:43.636750",
+ "modified": "2024-10-28 22:31:23.146735",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Repost",

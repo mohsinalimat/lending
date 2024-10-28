@@ -53,7 +53,7 @@ class LoanRepaymentRepost(Document):
 			reverse_loan_interest_accruals,
 		)
 
-		for entry in self.get("repayment_entries"):
+		for entry in reversed(self.get("repayment_entries", [])):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 			repayment_doc.docstatus = 1
 			repayment_doc.pending_principal_amount = 0
@@ -80,7 +80,7 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.update_demands()
 			repayment_doc.make_gl_entries()
 
-		if self.reverse_future_penal_accruals_and_demands:
+		if self.cancel_future_penal_accruals_and_demands:
 			reverse_loan_interest_accruals(
 				self.loan,
 				self.repost_date,
