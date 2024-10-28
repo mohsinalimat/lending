@@ -37,6 +37,7 @@ class LoanRepayment(AccountsController):
 			payment_type=self.repayment_type,
 			charges=charges,
 			loan_disbursement=self.loan_disbursement,
+			for_update=True,
 		)
 		self.set_missing_values(amounts)
 		self.validate_repayment_type()
@@ -104,6 +105,7 @@ class LoanRepayment(AccountsController):
 					self.posting_date,
 					payment_type=self.repayment_type,
 					loan_disbursement=self.loan_disbursement,
+					for_update=True,
 				)
 				self.allocate_amount_against_demands(amounts, on_submit=True)
 				self.db_update_all()
@@ -1631,6 +1633,7 @@ def get_unpaid_demands(
 	loan_disbursement=None,
 	emi_wise=False,
 	sales_invoice=None,
+	for_update=False,
 ):
 	if not posting_date:
 		posting_date = getdate()
@@ -1690,6 +1693,9 @@ def get_unpaid_demands(
 		query = query.select(Sum(loan_demand.outstanding_amount).as_("pending_amount"))
 		query = query.select(loan_demand.repayment_schedule_detail)
 		query = query.groupby(loan_demand.repayment_schedule_detail)
+
+	if for_update:
+		query = query.for_update()
 
 	loan_demands = query.run(as_dict=1)
 
@@ -1773,6 +1779,7 @@ def get_amounts(
 	payment_type=None,
 	charges=None,
 	loan_disbursement=None,
+	for_update=False,
 ):
 	demand_type, demand_subtype = get_demand_type(payment_type)
 
@@ -1784,6 +1791,7 @@ def get_amounts(
 		demand_subtype=demand_subtype,
 		charges=charges,
 		loan_disbursement=loan_disbursement,
+		for_update=for_update,
 	)
 
 	amounts = process_amount_for_loan(
@@ -1956,6 +1964,7 @@ def calculate_amounts(
 	with_loan_details=False,
 	charges=None,
 	loan_disbursement=None,
+	for_update=False,
 ):
 	amounts = init_amounts()
 
@@ -1968,6 +1977,7 @@ def calculate_amounts(
 			payment_type=payment_type,
 			charges=charges,
 			loan_disbursement=loan_disbursement,
+			for_update=for_update,
 		)
 	else:
 		amounts = get_amounts(
@@ -1977,6 +1987,7 @@ def calculate_amounts(
 			payment_type=payment_type,
 			charges=charges,
 			loan_disbursement=loan_disbursement,
+			for_update=for_update,
 		)
 
 	amounts["available_security_deposit"] = frappe.db.get_value(
