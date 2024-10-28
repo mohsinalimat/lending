@@ -82,7 +82,7 @@ class LoanRepaymentRepost(Document):
 				self.repost_date,
 				interest_type="Penal Interest",
 				is_npa=0,
-				on_payment_allocation=True,
+				on_payment_allocation=False,
 			)
 
 			reverse_demands(self.loan, add_days(self.repost_date, 1), demand_type="Penalty")
