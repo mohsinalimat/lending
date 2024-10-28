@@ -1041,8 +1041,8 @@ class LoanRepayment(AccountsController):
 						"monthly_repayment_amount",
 					)
 
-					if not (
-						monthly_repayment_amount < flt(amount_paid, precision) < (2 * monthly_repayment_amount)
+					if (flt(amount_paid, precision) < monthly_repayment_amount) or (
+						flt(amount_paid, precision) > (2 * monthly_repayment_amount)
 					):
 						frappe.throw(_("Amount for advance payment must be between one to two EMI amount"))
 
