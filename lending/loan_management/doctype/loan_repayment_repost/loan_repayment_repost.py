@@ -35,7 +35,10 @@ class LoanRepaymentRepost(Document):
 		for entry in self.get("repayment_entries"):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 			repayment_doc.docstatus = 2
-			repayment_doc.mark_as_unpaid()
+
+			if not self.ignore_on_cancel_amount_update:
+				repayment_doc.mark_as_unpaid()
+
 			repayment_doc.update_demands(cancel=1)
 
 			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):

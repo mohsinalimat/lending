@@ -11,6 +11,7 @@
   "column_break_bmnx",
   "repost_date",
   "cancel_future_penal_accruals_and_demands",
+  "ignore_on_cancel_amount_update",
   "loan_repayment_entries_section",
   "repayment_entries",
   "section_break_kbry",
@@ -77,12 +78,18 @@
    "fieldname": "cancel_future_penal_accruals_and_demands",
    "fieldtype": "Check",
    "label": "Cancel Future Penal Accruals and Demands "
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_on_cancel_amount_update",
+   "fieldtype": "Check",
+   "label": "Ignore On Cancel Amount Update"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-28 22:31:23.146735",
+ "modified": "2024-10-29 17:43:22.197529",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Repost",
