@@ -78,6 +78,7 @@ class LoanRepaymentRepost(Document):
 			# Run on_submit events
 			repayment_doc.update_paid_amounts()
 			repayment_doc.update_demands()
+			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
 
 		if self.cancel_future_penal_accruals_and_demands:
