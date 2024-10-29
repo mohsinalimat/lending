@@ -1795,7 +1795,12 @@ def get_amounts(
 	)
 
 	amounts = process_amount_for_loan(
-		against_loan_doc, posting_date, unpaid_demands, amounts, loan_disbursement=loan_disbursement
+		against_loan_doc,
+		posting_date,
+		unpaid_demands,
+		amounts,
+		loan_disbursement=loan_disbursement,
+		status=against_loan_doc.status,
 	)
 
 	if with_loan_details:
@@ -1804,7 +1809,9 @@ def get_amounts(
 		return amounts
 
 
-def process_amount_for_loan(loan, posting_date, demands, amounts, loan_disbursement=None):
+def process_amount_for_loan(
+	loan, posting_date, demands, amounts, loan_disbursement=None, status=None
+):
 	from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
 		calculate_accrual_amount_for_loans,
 		calculate_penal_interest_for_loans,
@@ -1818,7 +1825,7 @@ def process_amount_for_loan(loan, posting_date, demands, amounts, loan_disbursem
 	is_backdated = 0
 
 	last_demand_date = get_last_demand_date(
-		loan.name, posting_date, loan_disbursement=loan_disbursement
+		loan.name, posting_date, loan_disbursement=loan_disbursement, status=status
 	)
 	latest_accrual_date = get_latest_accrual_date(
 		loan.name, posting_date, loan_disbursement=loan_disbursement
@@ -2074,7 +2081,9 @@ def update_installment_counts(against_loan):
 		)
 
 
-def get_last_demand_date(loan, posting_date, demand_subtype="Interest", loan_disbursement=None):
+def get_last_demand_date(
+	loan, posting_date, demand_subtype="Interest", loan_disbursement=None, status=None
+):
 	from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
 		get_last_disbursement_date,
 	)
@@ -2095,7 +2104,7 @@ def get_last_demand_date(loan, posting_date, demand_subtype="Interest", loan_dis
 		"MAX(demand_date)",
 	)
 
-	if demand_subtype == "Interest" and last_demand_date:
+	if demand_subtype == "Interest" and last_demand_date and status != "Closed":
 		last_demand_date = add_days(last_demand_date, -1)
 
 	if not last_demand_date:
