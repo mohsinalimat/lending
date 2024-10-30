@@ -67,18 +67,22 @@ def update_waived_amount_in_demand(self, method=None):
 
 def make_partner_charge_gl_entries(doc, method):
 	if doc.get("loan_partner"):
+		accounting_enabled = frappe.db.get_value(
+			"Loan Partner", doc.loan_partner, "enable_partner_accounting"
+		)
+
+		if not accounting_enabled:
+			return
+
 		gl_entries = []
 		partner_details = frappe._dict(
 			frappe.db.get_all(
 				"Loan Partner Shareable",
 				filters={"parent": doc.loan_partner},
-				fields=["shareable_type", "partner_collection_percentage", "enable_partner_accounting"],
+				fields=["shareable_type", "partner_collection_percentage"],
 				as_list=1,
 			)
 		)
-
-		if not partner_details.enable_partner_accounting:
-			return
 
 		partner_payable_account = frappe.db.get_value(
 			"Loan Partner", doc.loan_partner, "payable_account"
