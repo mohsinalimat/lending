@@ -23,7 +23,9 @@ class LoanRepaymentRepost(Document):
 		if self.loan_disbursement:
 			filters["loan_disbursement"] = self.loan_disbursement
 
-		entries = frappe.get_all("Loan Repayment", filters, pluck="name", order_by="posting_date desc")
+		entries = frappe.get_all(
+			"Loan Repayment", filters, pluck="name", order_by="posting_date desc, creation desc"
+		)
 		for entry in entries:
 			self.append("repayment_entries", {"loan_repayment": entry})
 
