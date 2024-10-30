@@ -148,8 +148,9 @@ class Loan(AccountsController):
 			process_loan_interest_accrual_for_loans,
 		)
 
-		if self.watch_period_end_date and getdate() < getdate(self.watch_period_end_date):
-			frappe.throw(_("Cannot un mark as NPA before watch period end date"))
+		if self.has_value_changed("unmark_npa") and self.unmark_npa:
+			if self.watch_period_end_date and getdate() < getdate(self.watch_period_end_date):
+				frappe.throw(_("Cannot un mark as NPA before watch period end date"))
 
 		if self.has_value_changed("manual_npa"):
 			update_all_linked_loan_customer_npa_status(
