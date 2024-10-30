@@ -132,7 +132,7 @@ class LoanRepaymentSchedule(Document):
 				flt(payable_interest, precision),
 				"",
 				last_accrual_date,
-				self.posting_date,
+				add_days(self.posting_date, -1),
 				"Regular",
 				"Normal Interest",
 				self.rate_of_interest,
@@ -185,7 +185,6 @@ class LoanRepaymentSchedule(Document):
 			pending_prev_days,
 		) = self.add_rows_from_prev_disbursement("repayment_schedule", 100, 100)
 
-		print(balance_amount, "##############")
 		self.make_repayment_schedule(
 			"repayment_schedule",
 			previous_interest_amount,
