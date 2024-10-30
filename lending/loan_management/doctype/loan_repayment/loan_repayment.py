@@ -1530,6 +1530,7 @@ class LoanRepayment(AccountsController):
 
 		if self.repayment_type in (
 			"Normal Repayment",
+			"Loan Closure",
 			"Pre Payment",
 			"Advance Payment",
 			"Write Off Recovery",
