@@ -72,10 +72,13 @@ def make_partner_charge_gl_entries(doc, method):
 			frappe.db.get_all(
 				"Loan Partner Shareable",
 				filters={"parent": doc.loan_partner},
-				fields=["shareable_type", "partner_collection_percentage"],
+				fields=["shareable_type", "partner_collection_percentage", "enable_partner_accounting"],
 				as_list=1,
 			)
 		)
+
+		if not partner_details.enable_partner_accounting:
+			return
 
 		partner_payable_account = frappe.db.get_value(
 			"Loan Partner", doc.loan_partner, "payable_account"
