@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import add_days
+from frappe.utils import add_days, cint, flt
 
 from lending.loan_management.doctype.loan_repayment.loan_repayment import calculate_amounts
 
@@ -58,6 +58,7 @@ class LoanRepaymentRepost(Document):
 			reverse_loan_interest_accruals,
 		)
 
+		precision = cint(frappe.db.get_default("currency_precision")) or 2
 		for entry in reversed(self.get("repayment_entries", [])):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 
@@ -82,6 +83,11 @@ class LoanRepaymentRepost(Document):
 			)
 
 			repayment_doc.set_missing_values(amounts)
+
+			repayment_doc.set(
+				"pending_principal_amount", flt(amounts["pending_principal_amount"], precision)
+			)
+
 			repayment_doc.allocate_amount_against_demands(amounts)
 
 			# Run on_submit events
