@@ -65,8 +65,8 @@ class LoanRepaymentRepost(Document):
 				frappe.delete_doc("Loan Repayment Detail", entry.name, force=1)
 
 			repayment_doc.docstatus = 1
-			repayment_doc.pending_principal_amount = 0
-			repayment_doc.excess_amount = 0
+			repayment_doc.set("pending_principal_amount", 0)
+			repayment_doc.set("excess_amount", 0)
 
 			charges = []
 			if self.get("payable_charges"):
