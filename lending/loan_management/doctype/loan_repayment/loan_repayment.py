@@ -836,7 +836,7 @@ class LoanRepayment(AccountsController):
 					query = query.set(loan.status, "Disbursed")
 					self.update_repayment_schedule_status(cancel=1)
 
-			if self.excess_amount:
+			if flt(self.excess_amount) > 0:
 				query = query.set(loan.excess_amount_paid, loan.excess_amount_paid - self.excess_amount)
 
 			query.run()

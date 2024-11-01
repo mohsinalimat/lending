@@ -5,7 +5,10 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import add_days, cint, flt
 
-from lending.loan_management.doctype.loan_repayment.loan_repayment import calculate_amounts
+from lending.loan_management.doctype.loan_repayment.loan_repayment import (
+	calculate_amounts,
+	get_pending_principal_amount,
+)
 
 
 class LoanRepaymentRepost(Document):
@@ -84,9 +87,10 @@ class LoanRepaymentRepost(Document):
 
 			repayment_doc.set_missing_values(amounts)
 
-			repayment_doc.set(
-				"pending_principal_amount", flt(amounts["pending_principal_amount"], precision)
-			)
+			loan = frappe.get_doc("Loan", repayment_doc.against_loan)
+			pending_principal_amount = get_pending_principal_amount(loan)
+
+			repayment_doc.set("pending_principal_amount", flt(pending_principal_amount, precision))
 
 			repayment_doc.allocate_amount_against_demands(amounts)
 
