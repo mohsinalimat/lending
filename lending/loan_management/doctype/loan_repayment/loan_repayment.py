@@ -938,6 +938,7 @@ class LoanRepayment(AccountsController):
 				frappe.qb.from_(lr_detail).delete().where(lr_detail.name.isin(records_to_delete)).run()
 				self.load_from_db()
 
+		total_demanded_principal = 0
 		self.principal_amount_paid = 0
 		self.total_penalty_paid = 0
 		self.total_interest_paid = 0
@@ -946,6 +947,11 @@ class LoanRepayment(AccountsController):
 		self.unbooked_penalty_paid = 0
 		self.total_partner_principal_share = 0
 		self.total_partner_interest_share = 0
+		self.excess_amount = 0
+
+		for demand in amounts.get("unpaid_demands"):
+			if demand.get("demand_subtype") == "Principal":
+				total_demanded_principal += demand.get("outstanding_amount")
 
 		if self.repayment_type in ("Write Off Recovery", "Write Off Settlement"):
 			if not self.total_charges_payable:
@@ -1105,6 +1111,16 @@ class LoanRepayment(AccountsController):
 		):
 			self.excess_amount = self.principal_amount_paid - self.payable_principal_amount
 			self.principal_amount_paid -= self.excess_amount
+
+		total_paid_principal_demand = sum(
+			d.paid_amount for d in self.get("repayment_details") if d.demand_subtype == "Principal"
+		)
+		if flt(self.excess_amount, precision) < 0 and (
+			flt(total_demanded_principal, precision) - flt(total_paid_principal_demand, precision)
+			== abs(flt(self.excess_amount, precision))
+		):
+			last_principal_demand = self.get("repayment_details")[-1]
+			last_principal_demand.paid_amount += abs(self.excess_amount)
 
 	def set_partner_payment_ratio(self):
 		if self.get("loan_partner"):
