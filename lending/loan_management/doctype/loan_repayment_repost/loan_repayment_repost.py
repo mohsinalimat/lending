@@ -60,6 +60,10 @@ class LoanRepaymentRepost(Document):
 
 		for entry in reversed(self.get("repayment_entries", [])):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
+
+			for entry in repayment_doc.get("repayment_details"):
+				frappe.delete_doc("Loan Repayment Detail", entry.name, force=1)
+
 			repayment_doc.docstatus = 1
 			repayment_doc.pending_principal_amount = 0
 			repayment_doc.excess_amount = 0
