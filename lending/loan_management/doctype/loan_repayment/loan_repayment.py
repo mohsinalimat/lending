@@ -1323,9 +1323,14 @@ class LoanRepayment(AccountsController):
 			make_reverse_gl_entries(voucher_type="Loan Repayment", voucher_no=self.name)
 			return
 
+		gle_map = self.get_gl_map()
+
+		if gle_map:
+			make_gl_entries(gle_map, cancel=cancel, adv_adj=adv_adj)
+
+	def get_gl_map(self):
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
 		gle_map = []
-
 		payment_account = self.get_payment_account()
 
 		account_details = frappe.db.get_value(
@@ -1440,9 +1445,19 @@ class LoanRepayment(AccountsController):
 				)
 
 		self.add_loan_partner_gl_entries(gle_map)
+		self.add_round_off_gl_entry(gle_map)
 
-		if gle_map:
-			make_gl_entries(gle_map, cancel=cancel, adv_adj=adv_adj)
+		return gle_map
+
+	def add_round_off_gl_entry(self, gle_map):
+		payment_account = self.get_payment_account()
+		total_payment_amount = sum(d.debit for d in gle_map if d.account == payment_account)
+
+		diff = total_payment_amount - self.amount_paid
+
+		if abs(diff) > 0:
+			round_off_account = frappe.db.get_value("Company", self.company, "round_off_account")
+			self.add_gl_entry(round_off_account, payment_account, diff, gle_map)
 
 	def add_loan_partner_gl_entries(self, gle_map):
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
