@@ -8,7 +8,11 @@ from frappe.query_builder.functions import Round, Sum
 from frappe.utils import add_days, cint, flt, get_datetime, getdate
 
 import erpnext
-from erpnext.accounts.general_ledger import make_gl_entries, make_reverse_gl_entries
+from erpnext.accounts.general_ledger import (
+	make_gl_entries,
+	make_reverse_gl_entries,
+	process_gl_map,
+)
 from erpnext.controllers.accounts_controller import AccountsController
 
 from lending.loan_management.doctype.loan_limit_change_log.loan_limit_change_log import (
@@ -1446,6 +1450,8 @@ class LoanRepayment(AccountsController):
 
 		self.add_loan_partner_gl_entries(gle_map)
 		self.add_round_off_gl_entry(gle_map)
+
+		gle_map = process_gl_map(gle_map)
 
 		return gle_map
 
