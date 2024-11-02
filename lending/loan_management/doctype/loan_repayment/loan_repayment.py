@@ -1450,10 +1450,12 @@ class LoanRepayment(AccountsController):
 		return gle_map
 
 	def add_round_off_gl_entry(self, gle_map):
+		precision = cint(frappe.db.get_default("currency_precision")) or 2
+
 		payment_account = self.get_payment_account()
 		total_payment_amount = sum(d.debit for d in gle_map if d.account == payment_account)
 
-		diff = total_payment_amount - self.amount_paid
+		diff = flt(total_payment_amount - self.amount_paid, precision)
 
 		if abs(diff) > 0:
 			round_off_account = frappe.db.get_value("Company", self.company, "round_off_account")
