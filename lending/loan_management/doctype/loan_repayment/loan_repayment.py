@@ -2189,18 +2189,18 @@ def get_unbooked_interest(loan, posting_date, loan_disbursement=None, last_deman
 def get_accrued_interest(
 	loan, posting_date, interest_type="Normal Interest", last_demand_date=None, loan_disbursement=None
 ):
-	filters = {
-		"loan": loan,
-		"docstatus": 1,
-		"posting_date": ("<=", posting_date),
-		"interest_type": interest_type,
-	}
+	filters = [
+		["loan", "=", loan],
+		["docstatus", "=", 1],
+		["posting_date", "<=", posting_date],
+		["interest_type", "=", interest_type],
+	]
 
 	if last_demand_date:
-		filters["posting_date"] = (">", last_demand_date)
+		filters.append(["posting_date", ">", last_demand_date])
 
 	if loan_disbursement:
-		filters["loan_disbursement"] = loan_disbursement
+		filters.append(["loan_disbursement", "=", loan_disbursement])
 
 	accrued_interest = frappe.db.get_value(
 		"Loan Interest Accrual",
