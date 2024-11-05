@@ -154,6 +154,16 @@ class LoanRepayment(AccountsController):
 				is_npa=self.is_npa,
 				on_payment_allocation=True,
 			)
+
+			if self.repayment_type in ("Full Settlement", "Write Off Settlement"):
+				accruals += reverse_loan_interest_accruals(
+					self.against_loan,
+					self.posting_date,
+					interest_type="Normal Interest",
+					is_npa=self.is_npa,
+					on_payment_allocation=True,
+				)
+
 			reverse_demands(self.against_loan, add_days(self.posting_date, 1), demand_type="Penalty")
 
 			if accruals:
