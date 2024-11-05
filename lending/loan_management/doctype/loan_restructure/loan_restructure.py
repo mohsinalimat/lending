@@ -737,9 +737,9 @@ def get_pending_tenure_and_start_date(loan, posting_date, repayment_type, loan_d
 		else:
 			repayment_start_date = frappe.db.get_value(
 				"Repayment Schedule",
-				{"parent": schedule, "payment_date": (">=", "posting_date")},
+				{"parent": schedule, "payment_date": (">=", posting_date)},
 				["payment_date"],
-				order_by="payment_date",
+				order_by="payment_date asc",
 			)
 
 	if moratorium_end_date and getdate(posting_date) > getdate(moratorium_end_date):
