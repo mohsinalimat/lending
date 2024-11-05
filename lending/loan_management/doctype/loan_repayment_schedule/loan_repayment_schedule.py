@@ -456,18 +456,6 @@ class LoanRepaymentSchedule(Document):
 		additional_principal_amount = 0
 		pending_prev_days = 0
 
-		if (
-			self.moratorium_end_date
-			and getdate(self.posting_date) <= getdate(self.moratorium_end_date)
-			and self.restructure_type
-		):
-			return (
-				previous_interest_amount,
-				balance_principal_amount,
-				additional_principal_amount,
-				pending_prev_days,
-			)
-
 		loan_status = frappe.db.get_value("Loan", self.loan, "status")
 		if (
 			loan_status == "Partially Disbursed" and self.repayment_schedule_type != "Line of Credit"
@@ -538,6 +526,24 @@ class LoanRepaymentSchedule(Document):
 							self.repayment_start_date = row.payment_date
 							prev_repayment_date = row.payment_date
 							break
+
+					if (
+						self.moratorium_end_date
+						and getdate(self.posting_date) <= getdate(self.moratorium_end_date)
+						and self.restructure_type
+					):
+						self.monthly_repayment_amount = get_monthly_repayment_amount(
+							self.current_principal_amount,
+							self.rate_of_interest,
+							self.repayment_periods,
+							self.repayment_frequency,
+						)
+						return (
+							previous_interest_amount,
+							self.current_principal_amount,
+							additional_principal_amount,
+							pending_prev_days,
+						)
 
 					if self.restructure_type in ("Pre Payment", "Advance Payment") and completed_tenure >= 1:
 						self.get("repayment_schedule")[
