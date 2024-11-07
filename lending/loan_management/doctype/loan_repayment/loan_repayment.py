@@ -544,6 +544,9 @@ class LoanRepayment(AccountsController):
 	def validate_repayment_type(self):
 		loan_status = frappe.db.get_value("Loan", self.against_loan, "status")
 
+		if loan_status == "Closed":
+			frappe.throw(_("Repayment cannot be made for closed loan"))
+
 		if loan_status == "Written Off":
 			if (
 				self.repayment_type not in ("Write Off Recovery", "Write Off Settlement")
