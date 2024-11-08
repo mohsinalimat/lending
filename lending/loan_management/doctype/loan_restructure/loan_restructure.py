@@ -326,12 +326,11 @@ class LoanRestructure(AccountsController):
 		if self.loan_disbursement:
 			filters["loan_disbursement"] = self.loan_disbursement
 
-		schedule = frappe.db.get_all(
+		schedule = frappe.db.get_value(
 			"Loan Repayment Schedule",
 			filters,
-			order_by="posting_date desc",
-			limit=1,
-		)[0]
+			order_by="posting_date desc, creation desc",
+		)
 
 		frappe.db.set_value("Loan Repayment Schedule", schedule.name, "status", "Active")
 
