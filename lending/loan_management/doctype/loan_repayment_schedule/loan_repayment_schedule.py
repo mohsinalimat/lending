@@ -466,6 +466,11 @@ class LoanRepaymentSchedule(Document):
 				filters["loan_disbursement"] = self.loan_disbursement
 
 			prev_schedule = frappe.get_doc("Loan Repayment Schedule", filters)
+
+			self.total_installments_raised = prev_schedule.total_installments_raised
+			self.total_installments_paid = prev_schedule.total_installments_paid
+			self.total_installments_overdue = prev_schedule.total_installments_overdue
+
 			if prev_schedule:
 				if self.restructure_type:
 					self.loan_disbursement = prev_schedule.loan_disbursement
