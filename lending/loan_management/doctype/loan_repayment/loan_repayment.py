@@ -2097,6 +2097,8 @@ def init_amounts():
 
 
 def update_installment_counts(against_loan):
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
+
 	loan_demand = frappe.qb.DocType("Loan Demand")
 	loan_demands = (
 		frappe.qb.from_(loan_demand)
@@ -2122,7 +2124,7 @@ def update_installment_counts(against_loan):
 		)
 
 		count_details[demand.loan_repayment_schedule]["total_installments_raised"] += 1
-		if demand.total_outstanding_amount <= 0:
+		if precision(demand.total_outstanding_amount, 2) <= 0:
 			count_details[demand.loan_repayment_schedule]["total_installments_paid"] += 1
 		else:
 			count_details[demand.loan_repayment_schedule]["total_installments_overdue"] += 1
