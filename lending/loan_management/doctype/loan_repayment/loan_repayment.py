@@ -1058,9 +1058,14 @@ class LoanRepayment(AccountsController):
 		if flt(amount_paid, precision) > 0:
 			if self.is_term_loan and not on_submit:
 				if self.repayment_type == "Advance Payment":
+					filters = {"loan": self.against_loan, "status": "Active", "docstatus": 1}
+
+					if self.loan_disbursement:
+						filters["loan_disbursement"] = self.loan_disbursement
+
 					monthly_repayment_amount = frappe.db.get_value(
 						"Loan Repayment Schedule",
-						{"loan": self.against_loan, "status": "Active", "docstatus": 1},
+						filters,
 						"monthly_repayment_amount",
 					)
 

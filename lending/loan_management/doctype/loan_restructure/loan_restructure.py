@@ -329,10 +329,12 @@ class LoanRestructure(AccountsController):
 		schedule = frappe.db.get_value(
 			"Loan Repayment Schedule",
 			filters,
+			"name",
 			order_by="posting_date desc, creation desc",
+			for_update=True,
 		)
 
-		frappe.db.set_value("Loan Repayment Schedule", schedule.name, "status", "Active")
+		frappe.db.set_value("Loan Repayment Schedule", schedule, "status", "Active")
 
 	def validate_waiver_amount(self):
 		if flt(self.interest_waiver_amount) > flt(self.interest_overdue) - flt(
