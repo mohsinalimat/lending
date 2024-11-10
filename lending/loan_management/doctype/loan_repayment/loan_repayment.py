@@ -454,7 +454,9 @@ class LoanRepayment(AccountsController):
 			"Loan Restructure", {"loan_repayment": self.name, "docstatus": 1}
 		)
 		if loan_restructure:
-			frappe.get_doc("Loan Restructure", {"loan_repayment": self.name}).cancel()
+			restructure = frappe.get_doc("Loan Restructure", {"loan_repayment": self.name})
+			restructure.flags.ignore_links = True
+			restructure.cancel()
 
 	def set_missing_values(self, amounts):
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
@@ -1237,6 +1239,7 @@ class LoanRepayment(AccountsController):
 		allocation_order_doc = frappe.get_doc("Loan Demand Offset Order", allocation_order)
 		for d in allocation_order_doc.get("components"):
 			if d.demand_type == "EMI (Principal + Interest)" and pending_amount > 0:
+				pending_amount = self.adjust_component(pending_amount, "BPI", demands)
 				pending_amount = self.adjust_component(pending_amount, "EMI", demands)
 			if d.demand_type == "Principal" and pending_amount > 0:
 				pending_amount = self.adjust_component(pending_amount, "Normal", demands)
