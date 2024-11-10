@@ -312,6 +312,7 @@ class LoanRestructure(AccountsController):
 		schedule = frappe.db.get_value("Loan Repayment Schedule", filters, "name")
 
 		doc = frappe.get_doc("Loan Repayment Schedule", schedule)
+		doc.flags.ignore_links = True
 		doc.reverse_interest_accruals = 1
 		doc.cancel()
 
