@@ -2127,7 +2127,7 @@ def update_installment_counts(against_loan):
 		)
 
 		count_details[demand.loan_repayment_schedule]["total_installments_raised"] += 1
-		if precision(demand.total_outstanding_amount, 2) <= 0:
+		if flt(demand.total_outstanding_amount, precision) <= 0:
 			count_details[demand.loan_repayment_schedule]["total_installments_paid"] += 1
 		else:
 			count_details[demand.loan_repayment_schedule]["total_installments_overdue"] += 1
