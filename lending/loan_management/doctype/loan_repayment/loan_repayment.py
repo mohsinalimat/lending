@@ -419,6 +419,7 @@ class LoanRepayment(AccountsController):
 			"Process Loan Classification",
 			"Sales Invoice",
 			"Loan Repayment Schedule",
+			"Loan Repayment Repost",
 		]
 		self.make_gl_entries(cancel=1)
 		self.post_suspense_entries(cancel=1)
