@@ -90,7 +90,7 @@ class LoanRepaymentRepost(Document):
 
 			loan = frappe.get_doc("Loan", repayment_doc.against_loan)
 			pending_principal_amount = get_pending_principal_amount(
-				loan, pending_principal_amount=self.loan_disbursement
+				loan, loan_disbursement=self.loan_disbursement
 			)
 
 			repayment_doc.set("pending_principal_amount", flt(pending_principal_amount, precision))
