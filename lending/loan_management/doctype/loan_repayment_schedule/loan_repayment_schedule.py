@@ -484,7 +484,11 @@ class LoanRepaymentSchedule(Document):
 				if getdate(first_date) < prev_schedule.repayment_start_date:
 					after_bpi = 1
 
-				if after_bpi and getdate(self.posting_date) <= getdate(prev_schedule.posting_date):
+				if (
+					after_bpi
+					and getdate(self.posting_date) <= getdate(prev_schedule.posting_date)
+					and self.repayment_frequency != "Daily"
+				):
 					row = prev_schedule.get(schedule_field)[0]
 					self.add_repayment_schedule_row(
 						row.payment_date,

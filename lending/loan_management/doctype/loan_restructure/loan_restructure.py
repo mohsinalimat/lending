@@ -728,7 +728,7 @@ def get_pending_tenure_and_start_date(loan, posting_date, repayment_type, loan_d
 
 	if repayment_frequency == "One Time":
 		repayment_start_date = prev_repayment_start_date
-	elif repayment_schedule_type in "Monthly as per cycle date":
+	elif repayment_schedule_type in "Monthly as per cycle date" and repayment_frequency == "Monthly":
 		if repayment_type == "Pre Payment":
 			ignore_bpi = True
 
