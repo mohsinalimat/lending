@@ -22,6 +22,8 @@
   {
    "fieldname": "loan",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Loan",
    "options": "Loan",
    "read_only": 1,
@@ -30,6 +32,8 @@
   {
    "fieldname": "loan_disbursement",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Loan Disbursement",
    "options": "Loan Disbursement",
    "read_only": 1
@@ -37,6 +41,7 @@
   {
    "fieldname": "deposit_amount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Deposit Amount",
    "read_only": 1
   },
@@ -58,6 +63,7 @@
   {
    "fieldname": "deposit_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Deposit Date"
   },
   {
@@ -85,7 +91,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-17 16:00:11.897562",
+ "modified": "2024-11-12 16:56:40.174119",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Security Deposit",
