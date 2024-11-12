@@ -120,7 +120,8 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Status",
-   "options": "Initiated\nRejected\nActive\nRestructured\nRescheduled\nOutdated\nDraft\nCancelled\nClosed"
+   "options": "Initiated\nRejected\nActive\nRestructured\nRescheduled\nOutdated\nDraft\nCancelled\nClosed",
+   "search_index": 1
   },
   {
    "fieldname": "repayment_start_date",
@@ -370,7 +371,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-17 16:02:07.817157",
+ "modified": "2024-11-12 08:43:29.866090",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Schedule",
