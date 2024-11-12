@@ -89,7 +89,9 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.set_missing_values(amounts)
 
 			loan = frappe.get_doc("Loan", repayment_doc.against_loan)
-			pending_principal_amount = get_pending_principal_amount(loan)
+			pending_principal_amount = get_pending_principal_amount(
+				loan, pending_principal_amount=self.loan_disbursement
+			)
 
 			repayment_doc.set("pending_principal_amount", flt(pending_principal_amount, precision))
 
