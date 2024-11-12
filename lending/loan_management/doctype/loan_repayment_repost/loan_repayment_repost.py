@@ -71,7 +71,9 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.docstatus = 1
 			repayment_doc.set("pending_principal_amount", 0)
 			repayment_doc.set("excess_amount", 0)
-			repayment_doc.set("repayment_type", "Normal Repayment")
+
+			if not self.ignore_repayment_type_update:
+				repayment_doc.set("repayment_type", "Normal Repayment")
 
 			charges = []
 			if self.get("payable_charges"):

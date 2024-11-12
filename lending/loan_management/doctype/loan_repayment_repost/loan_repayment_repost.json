@@ -8,6 +8,7 @@
   "section_break_kcrv",
   "loan",
   "loan_disbursement",
+  "ignore_repayment_type_update",
   "column_break_bmnx",
   "repost_date",
   "cancel_future_penal_accruals_and_demands",
@@ -84,12 +85,18 @@
    "fieldname": "ignore_on_cancel_amount_update",
    "fieldtype": "Check",
    "label": "Ignore On Cancel Amount Update"
+  },
+  {
+   "default": "0",
+   "fieldname": "ignore_repayment_type_update",
+   "fieldtype": "Check",
+   "label": "Ignore Repayment Type Update"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-29 17:43:22.197529",
+ "modified": "2024-11-12 19:13:25.952537",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Repost",

@@ -793,7 +793,8 @@ class LoanRepayment(AccountsController):
 		shortfall_amount = self.pending_principal_amount - self.principal_amount_paid
 
 		if (
-			shortfall_amount > 0
+			auto_write_off_amount
+			and shortfall_amount > 0
 			and shortfall_amount <= auto_write_off_amount
 			and (self.payable_amount - self.amount_paid <= shortfall_amount)
 		):
