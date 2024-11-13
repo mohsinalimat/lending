@@ -15,6 +15,7 @@
   "ignore_on_cancel_amount_update",
   "loan_repayment_entries_section",
   "repayment_entries",
+  "entries_to_cancel",
   "section_break_kbry",
   "amended_from"
  ],
@@ -72,6 +73,7 @@
   {
    "fieldname": "repayment_entries",
    "fieldtype": "Table",
+   "label": "Entries To Repost",
    "options": "Loan Repayment Repost Detail"
   },
   {
@@ -91,12 +93,18 @@
    "fieldname": "ignore_repayment_type_update",
    "fieldtype": "Check",
    "label": "Ignore Repayment Type Update"
+  },
+  {
+   "fieldname": "entries_to_cancel",
+   "fieldtype": "Table",
+   "label": "Entries To Cancel",
+   "options": "Loan Repayment Repost Cancel Detail"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-12 19:13:25.952537",
+ "modified": "2024-11-13 14:24:32.338066",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Repost",

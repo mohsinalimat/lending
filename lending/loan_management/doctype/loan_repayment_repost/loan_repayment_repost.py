@@ -37,17 +37,24 @@ class LoanRepaymentRepost(Document):
 		self.trigger_on_submit_events()
 
 	def trigger_on_cancel_events(self):
+		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
 		for entry in self.get("repayment_entries"):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
-			repayment_doc.docstatus = 2
+			if entry.loan_repayment in entries_to_cancel:
+				repayment_doc.ignore_links = True
+				repayment_doc.cancel()
+			else:
+				repayment_doc.docstatus = 2
 
-			if not self.ignore_on_cancel_amount_update:
-				repayment_doc.mark_as_unpaid()
+				if not self.ignore_on_cancel_amount_update:
+					repayment_doc.mark_as_unpaid()
 
-			repayment_doc.update_demands(cancel=1)
+				repayment_doc.update_demands(cancel=1)
+				repayment_doc.update_limits(cancel=1)
+				repayment_doc.update_security_deposit_amount(cancel=1)
 
-			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
-				repayment_doc.cancel_loan_restructure()
+				if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
+					repayment_doc.cancel_loan_restructure()
 
 			# Delete GL Entries
 			frappe.db.sql(
@@ -60,11 +67,18 @@ class LoanRepaymentRepost(Document):
 		from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
 			reverse_loan_interest_accruals,
 		)
+		from lending.loan_management.doctype.loan_repayment.loan_repayment import (
+			update_installment_counts,
+		)
+
+		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
 
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
 		for entry in reversed(self.get("repayment_entries", [])):
-			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
+			if entry.loan_repayment in entries_to_cancel:
+				continue
 
+			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 			for entry in repayment_doc.get("repayment_details"):
 				frappe.delete_doc("Loan Repayment Detail", entry.name, force=1)
 
@@ -102,8 +116,11 @@ class LoanRepaymentRepost(Document):
 			# Run on_submit events
 			repayment_doc.update_paid_amounts()
 			repayment_doc.update_demands()
+			repayment_doc.update_limits()
+			repayment_doc.update_security_deposit_amount()
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
+			update_installment_counts(self.loan)
 
 		if self.cancel_future_penal_accruals_and_demands:
 			reverse_loan_interest_accruals(
