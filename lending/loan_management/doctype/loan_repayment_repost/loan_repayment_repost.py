@@ -70,6 +70,9 @@ class LoanRepaymentRepost(Document):
 		from lending.loan_management.doctype.loan_repayment.loan_repayment import (
 			update_installment_counts,
 		)
+		from lending.loan_management.doctype.loan_restructure.loan_restructure import (
+			create_update_loan_reschedule,
+		)
 
 		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
 
@@ -121,6 +124,19 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.update_security_deposit_amount()
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
+
+			if self.repayment_type in ("Advance Payment", "Pre Payment"):
+				create_update_loan_reschedule(
+					repayment_doc.against_loan,
+					repayment_doc.posting_date,
+					repayment_doc.name,
+					repayment_doc.repayment_type,
+					repayment_doc.principal_amount_paid,
+					loan_disbursement=repayment_doc.loan_disbursement,
+				)
+
+				repayment_doc.process_reschedule()
+
 			update_installment_counts(self.loan)
 
 		if self.cancel_future_penal_accruals_and_demands:
