@@ -420,6 +420,7 @@ class LoanRepayment(AccountsController):
 			"Sales Invoice",
 			"Loan Repayment Schedule",
 			"Loan Repayment Repost",
+			"Loan Adjustment",
 		]
 		self.make_gl_entries(cancel=1)
 		self.post_suspense_entries(cancel=1)
