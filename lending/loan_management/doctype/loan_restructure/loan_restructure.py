@@ -645,7 +645,7 @@ def create_loan_repayment(
 def create_update_loan_reschedule(
 	loan, posting_date, loan_repayment, repayment_type, principal_adjusted, loan_disbursement=None
 ):
-	if frappe.db.get_value("Loan Restructure", {"loan_repayment": loan_repayment}):
+	if frappe.db.get_value("Loan Restructure", {"loan_repayment": loan_repayment, "docstatus": 0}):
 		loan_restructure = frappe.get_doc("Loan Restructure", {"loan_repayment": loan_repayment})
 	else:
 		loan_restructure = frappe.new_doc("Loan Restructure")
