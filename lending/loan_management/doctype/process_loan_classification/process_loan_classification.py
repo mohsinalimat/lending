@@ -33,6 +33,7 @@ class ProcessLoanClassification(Document):
 				self.name,
 				self.payment_reference,
 				self.is_backdated,
+				self.force_update_dpd_in_loan
 			)
 		else:
 			BATCH_SIZE = 5000
@@ -46,6 +47,7 @@ class ProcessLoanClassification(Document):
 					classification_process=self.name,
 					payment_reference=self.payment_reference,
 					is_backdated=self.is_backdated,
+					force_update_dpd_in_loan=self.force_update_dpd_in_loan,
 					via_scheduler=True,
 					queue="long",
 					enqueue_after_commit=True,
@@ -59,6 +61,7 @@ def process_loan_classification_batch(
 	classification_process,
 	payment_reference,
 	is_backdated,
+	force_update_dpd_in_loan=False,
 	via_scheduler=False,
 ):
 	from lending.loan_management.doctype.loan.loan import update_days_past_due_in_loans
@@ -73,6 +76,7 @@ def process_loan_classification_batch(
 				ignore_freeze=True if payment_reference else False,
 				is_backdated=is_backdated,
 				via_background_job=via_scheduler,
+				force_update_dpd_in_loan=force_update_dpd_in_loan
 			)
 
 			if len(open_loans) > 1:

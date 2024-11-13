@@ -697,6 +697,7 @@ def update_days_past_due_in_loans(
 	ignore_freeze=False,
 	is_backdated=0,
 	via_background_job=False,
+	force_update_dpd_in_loan=False,
 ):
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import get_unpaid_demands
 
@@ -752,20 +753,21 @@ def update_days_past_due_in_loans(
 				days_past_due = 0
 				is_npa = 0
 
-			update_loan_and_customer_status(
-				demand.loan,
-				demand.company,
-				applicant_type,
-				applicant,
-				days_past_due,
-				is_npa,
-				posting_date or getdate(),
-				freeze_date=freeze_date,
-				loan_disbursement=disbursement,
-				is_backdated=is_backdated,
-				dpd_threshold=threshold,
-				via_background_job=via_background_job,
-			)
+			if posting_date == getdate() or force_update_dpd_in_loan:
+				update_loan_and_customer_status(
+					demand.loan,
+					demand.company,
+					applicant_type,
+					applicant,
+					days_past_due,
+					is_npa,
+					posting_date or getdate(),
+					freeze_date=freeze_date,
+					loan_disbursement=disbursement,
+					is_backdated=is_backdated,
+					dpd_threshold=threshold,
+					via_background_job=via_background_job,
+				)
 
 			create_dpd_record(
 				demand.loan, disbursement, posting_date, days_past_due, process_loan_classification
@@ -807,17 +809,26 @@ def create_loan_write_off(loan, posting_date):
 def create_dpd_record(
 	loan, loan_disbursement, posting_date, days_past_due, process_loan_classification=None
 ):
-	frappe.get_doc(
+	existing_log = frappe.db.get_value("Days Past Due Log", {
+		"loan": loan,
+   		"posting_date": posting_date,
+		"loan_disbursement": loan_disbursement
+	})
+	if existing_log:
+		doc = frappe.get_doc("Days Past Due Log", existing_log)
+	else:
+		doc = frappe.new_doc("Days Past Due Log")
+
+	doc.update(
 		{
-			"doctype": "Days Past Due Log",
 			"loan": loan,
 			"loan_disbursement": loan_disbursement,
 			"posting_date": posting_date,
 			"days_past_due": days_past_due,
 			"process_loan_classification": process_loan_classification,
 		}
-	).insert(ignore_permissions=True)
-
+	)
+	doc.save(ignore_permissions=True)
 
 def update_loan_and_customer_status(
 	loan,
@@ -931,7 +942,7 @@ def update_loan_and_customer_status(
 				update_all_linked_loan_customer_npa_status(
 					is_npa, applicant_type, applicant, posting_date, loan, via_background_job=via_background_job
 				)
-
+	
 	frappe.db.set_value(
 		"Loan",
 		loan,
