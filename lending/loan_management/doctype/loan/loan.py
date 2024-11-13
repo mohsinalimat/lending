@@ -809,17 +809,26 @@ def create_loan_write_off(loan, posting_date):
 def create_dpd_record(
 	loan, loan_disbursement, posting_date, days_past_due, process_loan_classification=None
 ):
-	frappe.get_doc(
+	existing_log = frappe.db.get_value("Days Past Due Log", {
+		"loan": loan,
+   		"posting_date": posting_date,
+		"loan_disbursement": loan_disbursement
+	})
+	if existing_log:
+		doc = frappe.get_doc("Days Past Due Log", existing_log)
+	else:
+		doc = frappe.new_doc("Days Past Due Log")
+
+	doc.update(
 		{
-			"doctype": "Days Past Due Log",
 			"loan": loan,
 			"loan_disbursement": loan_disbursement,
 			"posting_date": posting_date,
 			"days_past_due": days_past_due,
 			"process_loan_classification": process_loan_classification,
 		}
-	).insert(ignore_permissions=True)
-
+	)
+	doc.save(ignore_permissions=True)
 
 def update_loan_and_customer_status(
 	loan,
