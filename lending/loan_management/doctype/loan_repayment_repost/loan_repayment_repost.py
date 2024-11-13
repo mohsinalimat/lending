@@ -125,7 +125,7 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
 
-			if self.repayment_type in ("Advance Payment", "Pre Payment"):
+			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
 				create_update_loan_reschedule(
 					repayment_doc.against_loan,
 					repayment_doc.posting_date,
