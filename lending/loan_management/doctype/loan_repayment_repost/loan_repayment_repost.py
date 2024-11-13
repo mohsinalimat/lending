@@ -110,6 +110,7 @@ class LoanRepaymentRepost(Document):
 			)
 
 			repayment_doc.set("pending_principal_amount", flt(pending_principal_amount, precision))
+			repayment_doc.before_validate()
 
 			repayment_doc.allocate_amount_against_demands(amounts)
 
