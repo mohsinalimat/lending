@@ -348,6 +348,7 @@ def make_credit_note(
 	posting_date=None,
 ):
 	si = frappe.new_doc("Sales Invoice")
+	si.flags.ignore_links = True
 	si.company = company
 	si.customer = applicant
 	si.loan = loan
