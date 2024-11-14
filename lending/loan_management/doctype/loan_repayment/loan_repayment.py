@@ -1917,7 +1917,7 @@ def process_amount_for_loan(
 		loan.name, posting_date, loan_disbursement=loan_disbursement, last_demand_date=last_demand_date
 	)
 
-	if getdate(posting_date) > getdate(last_demand_date) or is_backdated:
+	if getdate(posting_date) > getdate(latest_accrual_date) or is_backdated:
 		amounts["unaccrued_interest"] = calculate_accrual_amount_for_loans(
 			loan,
 			posting_date=add_days(posting_date, -1),
