@@ -753,7 +753,7 @@ def update_days_past_due_in_loans(
 				days_past_due = 0
 				is_npa = 0
 
-			if posting_date == getdate() or force_update_dpd_in_loan:
+			if posting_date == add_days(getdate(), -1) or force_update_dpd_in_loan:
 				update_loan_and_customer_status(
 					demand.loan,
 					demand.company,
@@ -809,11 +809,10 @@ def create_loan_write_off(loan, posting_date):
 def create_dpd_record(
 	loan, loan_disbursement, posting_date, days_past_due, process_loan_classification=None
 ):
-	existing_log = frappe.db.get_value("Days Past Due Log", {
-		"loan": loan,
-   		"posting_date": posting_date,
-		"loan_disbursement": loan_disbursement
-	})
+	existing_log = frappe.db.get_value(
+		"Days Past Due Log",
+		{"loan": loan, "posting_date": posting_date, "loan_disbursement": loan_disbursement},
+	)
 	if existing_log:
 		doc = frappe.get_doc("Days Past Due Log", existing_log)
 	else:
@@ -829,6 +828,7 @@ def create_dpd_record(
 		}
 	)
 	doc.save(ignore_permissions=True)
+
 
 def update_loan_and_customer_status(
 	loan,
@@ -942,7 +942,7 @@ def update_loan_and_customer_status(
 				update_all_linked_loan_customer_npa_status(
 					is_npa, applicant_type, applicant, posting_date, loan, via_background_job=via_background_job
 				)
-	
+
 	frappe.db.set_value(
 		"Loan",
 		loan,

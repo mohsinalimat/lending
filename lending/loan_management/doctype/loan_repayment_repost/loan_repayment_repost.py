@@ -41,8 +41,10 @@ class LoanRepaymentRepost(Document):
 		for entry in self.get("repayment_entries"):
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 			if entry.loan_repayment in entries_to_cancel:
-				repayment_doc.ignore_links = True
+				repayment_doc.flags.ignore_links = True
+				repayment_doc.flags.from_repost = True
 				repayment_doc.cancel()
+				repayment_doc.flags.from_repost = False
 			else:
 				repayment_doc.docstatus = 2
 
