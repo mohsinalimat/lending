@@ -198,7 +198,7 @@ def make_loan_demand_for_term_loans(
 
 	loan_repayment_schedules = frappe.db.get_all(
 		"Loan Repayment Schedule",
-		schedule_filters,
+		filters=schedule_filters,
 		fields=["name", "loan", "loan_disbursement", "repayment_start_date"],
 	)
 
