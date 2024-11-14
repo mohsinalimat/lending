@@ -921,6 +921,9 @@ class LoanRepayment(AccountsController):
 			).run()
 
 	def check_future_accruals(self):
+		if self.flags.from_repost:
+			return
+
 		filters = {
 			"posting_date": (">", self.posting_date),
 			"docstatus": 1,
