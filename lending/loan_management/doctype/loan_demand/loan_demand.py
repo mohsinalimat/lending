@@ -191,7 +191,11 @@ def make_loan_demand_for_term_loans(
 
 	freeze_dates = get_freeze_date_map(open_loans)
 
-	schedule_filters = {"loan": ("in", open_loans), "payment_date": ("<=", posting_date)}
+	schedule_filters = {
+		"loan": ("in", open_loans),
+		"payment_date": ("<=", posting_date),
+		"docstatus": 1,
+	}
 
 	if loan_disbursement:
 		schedule_filters["loan_disbursement"] = loan_disbursement
