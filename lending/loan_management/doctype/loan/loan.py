@@ -731,7 +731,7 @@ def update_days_past_due_in_loans(
 			freeze_date = frappe.db.get_value("Loan", loan_name, "freeze_date")
 
 			dpd_date = freeze_date or posting_date
-			days_past_due = date_diff(getdate(dpd_date), getdate(demand_date))
+			days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
 			if days_past_due < 0:
 				days_past_due = 0
 
@@ -757,7 +757,7 @@ def update_days_past_due_in_loans(
 			is_npa = 0
 
 			dpd_date = freeze_date or posting_date
-			days_past_due = date_diff(getdate(dpd_date), getdate(demand.demand_date))
+			days_past_due = date_diff(getdate(dpd_date), getdate(demand.demand_date)) + 1
 			if days_past_due < 0:
 				days_past_due = 0
 
@@ -849,17 +849,22 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 			lr.name = lrd.parent
 			and lr.against_loan = %s
 			and lr.loan_disbursement = %s
-			and lr.demand_type in ("EMI", "BPI")
+			and lrd.demand_type in ("EMI", "BPI")
 			and lr.docstatus = 1
 			and lr.posting_date <= %s
 	""",
 		(loan, loan_disbursement, posting_date),
+		as_dict=1,
 	)
 
-	for demand in demands:
-		payment_against_demand -= demand.demand_amount
+	paid_amount = 0
+	if payment_against_demand:
+		paid_amount = flt(payment_against_demand[0].paid_amount)
 
-		if payment_against_demand < 0:
+	for demand in demands:
+		paid_amount -= demand.demand_amount
+
+		if paid_amount < 0:
 			return demand.demand_date
 
 
