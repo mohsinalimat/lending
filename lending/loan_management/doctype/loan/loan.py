@@ -711,15 +711,12 @@ def update_days_past_due_in_loans(
 	)
 
 	for disbursement in disbursements:
-		demand = get_unpaid_demands(
+		demand = get_oldest_outstanding_demand(
 			loan_name,
 			posting_date=posting_date,
 			loan_product=loan_product,
-			demand_type="EMI",
-			limit=1,
 			loan_disbursement=disbursement,
 		)
-
 		threshold_map = get_dpd_threshold_map()
 		threshold_write_off_map = get_dpd_threshold_write_off_map()
 
@@ -736,11 +733,10 @@ def update_days_past_due_in_loans(
 			return
 
 		if demand:
-			demand = demand[0]
 			is_npa = 0
 
 			dpd_date = freeze_date or posting_date
-			days_past_due = date_diff(getdate(dpd_date), getdate(demand.demand_date)) + 1
+			days_past_due = date_diff(getdate(dpd_date), getdate(demand.demand_date))
 			if days_past_due < 0:
 				days_past_due = 0
 
@@ -796,6 +792,52 @@ def update_days_past_due_in_loans(
 				via_background_job=via_background_job,
 			)
 			create_dpd_record(loan_name, disbursement, posting_date, 0, process_loan_classification)
+
+def get_oldest_outstanding_demand(loan, posting_date, loan_product, loan_disbursement):
+	"""Get outstanding demands for a loan"""
+	where_conditions = ""
+	if posting_date == add_days(getdate(), -1):
+		where_conditions = "AND round(outstanding_amount) > 0"
+
+	if loan_product:
+		where_conditions += f"AND loan_product = '{loan_product}'"
+
+	demands = frappe.db.sql("""
+		SELECT name, loan, loan_disbursement, demand_date, demand_amount, outstanding_amount, loan_product, company
+		FROM `tabLoan Demand`
+		WHERE loan = %s
+			AND docstatus = 1
+			AND demand_type in ("EMI", "BPI")
+			AND demand_date <= %s
+			AND loan_disbursement = %s
+			{0}
+		ORDER BY demand_date ASC
+	""".format(where_conditions), (loan, posting_date, loan_disbursement), as_dict=1)
+
+	if posting_date == add_days(getdate(), -1):
+		oldest_demand = demands[0]
+	else:
+		oldest_demand = None
+		for demand in demands:
+			payment_against_demand = frappe.db.sql("""
+				SELECT SUM(lrd.paid_amount) as paid_amount
+				FROM `tabLoan Repayment` lr, `tabLoan Repayment Detail` lrd
+				WHERE 
+					lr.name = lrd.parent
+					and lr.against_loan = %s
+					and lrd.loan_demand = %s
+					and lr.docstatus = 1
+					and lr.posting_date <= %s
+			""", (loan, demand.name, posting_date))
+
+			payment_against_demand = payment_against_demand[0][0] if payment_against_demand else 0
+			outstanding_amount = flt(demand.demand_amount) - flt(payment_against_demand)
+			if flt(outstanding_amount, 0) > 0:
+				demand["outstanding_amount"] = outstanding_amount
+				oldest_demand = demand
+				break
+	return oldest_demand
+
 
 
 def create_loan_write_off(loan, posting_date):
