@@ -172,7 +172,7 @@ class LoanDemand(AccountsController):
 
 
 def make_loan_demand_for_term_loans(
-	posting_date, loan_product=None, loan=None, process_loan_demand=None
+	posting_date, loan_product=None, loan=None, process_loan_demand=None, loan_disbursement=None
 ):
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	filters = {
@@ -191,9 +191,14 @@ def make_loan_demand_for_term_loans(
 
 	freeze_dates = get_freeze_date_map(open_loans)
 
+	schedule_filters = {"loan": ("in", open_loans), "payment_date": ("<=", posting_date)}
+
+	if loan_disbursement:
+		schedule_filters["loan_disbursement"] = loan_disbursement
+
 	loan_repayment_schedules = frappe.db.get_all(
 		"Loan Repayment Schedule",
-		filters={"docstatus": 1, "status": "Active", "loan": ("in", open_loans)},
+		schedule_filters,
 		fields=["name", "loan", "loan_disbursement", "repayment_start_date"],
 	)
 

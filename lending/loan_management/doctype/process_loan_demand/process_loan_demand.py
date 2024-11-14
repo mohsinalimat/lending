@@ -11,7 +11,11 @@ from lending.loan_management.doctype.loan_demand.loan_demand import make_loan_de
 class ProcessLoanDemand(Document):
 	def on_submit(self):
 		make_loan_demand_for_term_loans(
-			self.posting_date, loan_product=self.loan_product, loan=self.loan, process_loan_demand=self.name
+			self.posting_date,
+			loan_product=self.loan_product,
+			loan=self.loan,
+			process_loan_demand=self.name,
+			loan_disbursement=self.loan_disbursement,
 		)
 
 

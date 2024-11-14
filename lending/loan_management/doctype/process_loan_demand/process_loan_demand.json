@@ -9,7 +9,8 @@
   "posting_date",
   "amended_from",
   "loan_product",
-  "loan"
+  "loan",
+  "loan_disbursement"
  ],
  "fields": [
   {
@@ -45,12 +46,18 @@
    "in_standard_filter": 1,
    "label": "Loan",
    "options": "Loan"
+  },
+  {
+   "fieldname": "loan_disbursement",
+   "fieldtype": "Link",
+   "label": "Loan Disbursement",
+   "options": "Loan Disbursement"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-06-28 12:49:24.919557",
+ "modified": "2024-11-14 12:38:08.152481",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Process Loan Demand",
