@@ -127,28 +127,6 @@ class LoanDisbursement(AccountsController):
 		self.withheld_security_deposit()
 		self.make_gl_entries()
 
-	def add_bpi_difference_entry(self, gle_map):
-		if flt(self.bpi_amount_difference) > 0:
-			broken_period_interest_account = frappe.db.get_value(
-				"Loan Product", self.loan_product, "broken_period_interest_recovery_account"
-			)
-
-			if not broken_period_interest_account:
-				frappe.throw(
-					_("Please set Broken Period Interest Recovery Account for the Loan Product {0}").format(
-						frappe.bold(self.loan_product)
-					)
-				)
-
-			self.add_gl_entry(
-				gle_map,
-				broken_period_interest_account,
-				self.loan_account,
-				self.bpi_amount_difference,
-				_("BPI difference entry"),
-				bpi_difference_date=self.bpi_difference_date,
-			)
-
 	def submit_repayment_schedule(self):
 		filters = {
 			"loan": self.against_loan,
@@ -652,8 +630,6 @@ class LoanDisbursement(AccountsController):
 					(self.disbursed_amount * loan_partner_details.partner_loan_share_percentage) / 100,
 					remarks,
 				)
-
-		self.add_bpi_difference_entry(gle_map)
 
 		if gle_map:
 			if cancel:

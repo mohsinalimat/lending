@@ -193,7 +193,7 @@ def make_loan_demand_for_term_loans(
 
 	schedule_filters = {
 		"loan": ("in", open_loans),
-		"payment_date": ("<=", posting_date),
+		"status": "Active",
 		"docstatus": 1,
 	}
 
