@@ -754,6 +754,7 @@ def update_days_past_due_in_loans(
 			return
 
 		if demand:
+			demand = demand[0]
 			is_npa = 0
 
 			dpd_date = freeze_date or posting_date
