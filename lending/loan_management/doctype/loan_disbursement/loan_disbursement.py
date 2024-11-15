@@ -540,7 +540,7 @@ class LoanDisbursement(AccountsController):
 			)
 		)
 
-	def make_gl_entries(self, cancel=0, adv_adj=0):
+	def make_gl_entries(self, cancel=0, adv_adj=0, repost=0):
 		gle_map = []
 		remarks = _("Disbursement against loan:") + self.against_loan
 
@@ -587,7 +587,7 @@ class LoanDisbursement(AccountsController):
 				remarks,
 			)
 
-		if self.get("loan_disbursement_charges") and not cancel:
+		if self.get("loan_disbursement_charges") and not cancel and not repost:
 			make_sales_invoice_for_charge(
 				self.against_loan,
 				"loan_disbursement",
