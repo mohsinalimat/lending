@@ -91,7 +91,10 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.set("pending_principal_amount", 0)
 			repayment_doc.set("excess_amount", 0)
 
-			if not self.ignore_repayment_type_update:
+			if not self.ignore_repayment_type_update and repayment_doc.repayment_type in (
+				"Advance Payment",
+				"Pre Payment",
+			):
 				repayment_doc.set("repayment_type", "Normal Repayment")
 
 			charges = []
