@@ -141,7 +141,7 @@ class LoanDisbursement(AccountsController):
 			self.add_gl_entry(
 				gle_map,
 				broken_period_interest_account,
-				self.bank_account,
+				self.disbursement_account,
 				self.bpi_amount_difference,
 				_("BPI difference entry"),
 				bpi_difference_date=self.bpi_difference_date,
