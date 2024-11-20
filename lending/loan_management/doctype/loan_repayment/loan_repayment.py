@@ -540,6 +540,7 @@ class LoanRepayment(AccountsController):
 				"Loan Security Deposit",
 				{"loan": self.against_loan, "docstatus": 1},
 				"available_amount",
+				for_update=True,
 			)
 
 			if flt(self.amount_paid) > flt(available_deposit):
