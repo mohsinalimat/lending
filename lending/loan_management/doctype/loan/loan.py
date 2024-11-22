@@ -706,7 +706,7 @@ def update_days_past_due_in_loans(
 
 	disbursements = frappe.db.get_all(
 		"Loan Repayment Schedule",
-		{"loan": loan_name, "status": "Active", "docstatus": 1},
+		{"loan": loan_name, "status": ("in", ["Active", "Closed"]), "docstatus": 1},
 		pluck="loan_disbursement",
 	)
 
