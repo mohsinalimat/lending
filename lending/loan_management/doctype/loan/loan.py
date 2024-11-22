@@ -818,6 +818,7 @@ def update_days_past_due_in_loans(
 
 def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_disbursement):
 	"""Get outstanding demands for a loan"""
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	where_conditions = ""
 
 	if loan_product:
@@ -825,7 +826,7 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 
 	demands = frappe.db.sql(
 		"""
-		SELECT demand_date, sum(demand_amount) as demand_amount
+		SELECT demand_date, sum(demand_amount) as demand_amount, sum(outstanding_amount) as outstanding_amount
 		FROM `tabLoan Demand`
 		WHERE loan = %s
 			AND docstatus = 1
@@ -865,7 +866,7 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 	for demand in demands:
 		paid_amount -= demand.demand_amount
 
-		if paid_amount < 0:
+		if flt(paid_amount, precision) < 0 or flt(demand.outstanding_amount, precision) > 0:
 			return demand.demand_date
 
 
