@@ -704,6 +704,9 @@ def update_days_past_due_in_loans(
 	"""Update days past due in loans"""
 	posting_date = posting_date or getdate()
 
+	if not loan_product:
+		loan_product = frappe.get_value("Loan", loan_name, "loan_product")
+
 	disbursements = frappe.db.get_all(
 		"Loan Repayment Schedule",
 		{"loan": loan_name, "status": ("in", ["Active", "Closed"]), "docstatus": 1},
@@ -797,7 +800,6 @@ def update_days_past_due_in_loans(
 				create_loan_write_off(demand.loan, posting_date)
 		else:
 			# if no demand found, set DPD as 0
-			loan_product = frappe.get_value("Loan", loan_name, "loan_product")
 			threshold = threshold_map.get(loan_product, 0)
 
 			update_loan_and_customer_status(
@@ -820,9 +822,13 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 	"""Get outstanding demands for a loan"""
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	where_conditions = ""
+	payment_conditions = ""
 
 	if loan_product:
-		where_conditions = f"AND loan_product = '{loan_product}'"
+		where_conditions += f"AND loan_product = '{loan_product}'"
+
+	if loan_product == "Line of Credit":
+		where_conditions += f"AND loan_disbursement = '{loan_disbursement}'"
 
 	demands = frappe.db.sql(
 		"""
@@ -843,6 +849,12 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 		as_dict=1,
 	)
 
+	if loan_product:
+		payment_conditions += f"AND lr.loan_product = '{loan_product}'"
+
+	if loan_product == "Line of Credit":
+		payment_conditions += f"AND lr.loan_disbursement = '{loan_disbursement}'"
+
 	payment_against_demand = frappe.db.sql(
 		"""
 		SELECT SUM(lrd.paid_amount) as paid_amount
@@ -850,11 +862,13 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 		WHERE
 			lr.name = lrd.parent
 			and lr.against_loan = %s
-			and lr.loan_disbursement = %s
 			and lrd.demand_type = "EMI"
 			and lr.docstatus = 1
 			and lr.posting_date <= %s
-	""",
+			{0}
+	""".format(
+			payment_conditions
+		),
 		(loan, loan_disbursement, posting_date),
 		as_dict=1,
 	)
