@@ -838,14 +838,13 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 			AND docstatus = 1
 			AND demand_type = "EMI"
 			AND demand_date <= %s
-			AND loan_disbursement = %s
 			{0}
 		GROUP BY demand_date
 		ORDER BY demand_date
 	""".format(
 			where_conditions
 		),
-		(loan, posting_date, loan_disbursement),
+		(loan, posting_date),
 		as_dict=1,
 	)
 
@@ -869,7 +868,7 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 	""".format(
 			payment_conditions
 		),
-		(loan, loan_disbursement, posting_date),
+		(loan, posting_date),
 		as_dict=1,
 	)
 
