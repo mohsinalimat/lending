@@ -830,7 +830,7 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 		FROM `tabLoan Demand`
 		WHERE loan = %s
 			AND docstatus = 1
-			AND demand_type in ("EMI", "BPI")
+			AND demand_type = "EMI"
 			AND demand_date <= %s
 			AND loan_disbursement = %s
 			{0}
@@ -851,7 +851,7 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 			lr.name = lrd.parent
 			and lr.against_loan = %s
 			and lr.loan_disbursement = %s
-			and lrd.demand_type in ("EMI", "BPI")
+			and lrd.demand_type "EMI"
 			and lr.docstatus = 1
 			and lr.posting_date <= %s
 	""",
