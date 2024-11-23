@@ -731,9 +731,7 @@ def update_days_past_due_in_loans(
 				loan_disbursement=disbursement,
 			)
 
-			freeze_date = frappe.db.get_value("Loan", loan_name, "freeze_date")
-
-			dpd_date = freeze_date or posting_date
+			dpd_date = posting_date
 			days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
 			if days_past_due < 0:
 				days_past_due = 0
