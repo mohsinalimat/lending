@@ -848,36 +848,39 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 		as_dict=1,
 	)
 
-	if loan_product:
-		payment_conditions += f"AND loan_product = '{loan_product}'"
+	if demands:
+		first_demand_date = demands[0].demand_date
 
-	if loan_product == "Line of Credit":
-		payment_conditions += f"AND loan_disbursement = '{loan_disbursement}'"
+		if loan_product:
+			payment_conditions += f"AND loan_product = '{loan_product}'"
 
-	payment_against_demand = frappe.db.sql(
-		"""
-		SELECT SUM(principal_amount_paid + total_interest_paid) as paid_amount
-		FROM `tabLoan Repayment`
-		WHERE against_loan = %s
-			and docstatus = 1
-			and posting_date <= %s
-			{0}
-	""".format(
-			payment_conditions
-		),
-		(loan, posting_date),
-		as_dict=1,
-	)
+		if loan_product == "Line of Credit":
+			payment_conditions += f"AND loan_disbursement = '{loan_disbursement}'"
 
-	paid_amount = 0
-	if payment_against_demand:
-		paid_amount = flt(payment_against_demand[0].paid_amount)
+		payment_against_demand = frappe.db.sql(
+			"""
+			SELECT SUM(principal_amount_paid + total_interest_paid) as paid_amount
+			FROM `tabLoan Repayment`
+			WHERE against_loan = %s
+				and docstatus = 1
+				and posting_date BETWEEN %s AND %s
+				{0}
+		""".format(
+				payment_conditions
+			),
+			(loan, first_demand_date, posting_date),
+			as_dict=1,
+		)
 
-	for demand in demands:
-		paid_amount -= demand.demand_amount
+		paid_amount = 0
+		if payment_against_demand:
+			paid_amount = flt(payment_against_demand[0].paid_amount)
 
-		if flt(paid_amount, precision) < 0 or flt(demand.outstanding_amount, precision) > 0:
-			return demand.demand_date
+		for demand in demands:
+			paid_amount -= demand.demand_amount
+
+			if flt(paid_amount, precision) < 0 or flt(demand.outstanding_amount, precision) > 0:
+				return demand.demand_date
 
 
 def create_loan_write_off(loan, posting_date):
