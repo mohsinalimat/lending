@@ -830,14 +830,14 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 
 	demands = frappe.db.sql(
 		"""
-		SELECT demand_date, sum(demand_amount) as demand_amount, sum(outstanding_amount) as outstanding_amount
+		SELECT demand_date, demand_subtype, sum(demand_amount) as demand_amount, sum(outstanding_amount) as outstanding_amount
 		FROM `tabLoan Demand`
 		WHERE loan = %s
 			AND docstatus = 1
 			AND demand_type = "EMI"
 			AND demand_date <= %s
 			{0}
-		GROUP BY demand_date
+		GROUP BY demand_date, demand_subtype
 		ORDER BY demand_date
 	""".format(
 			where_conditions
@@ -857,7 +857,7 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 
 		payment_against_demand = frappe.db.sql(
 			"""
-			SELECT SUM(principal_amount_paid + total_interest_paid) as paid_amount
+			SELECT SUM(principal_amount_paid) as total_principal_paid, SUM(interest_amount_paid) as total_interest_paid,
 			FROM `tabLoan Repayment`
 			WHERE against_loan = %s
 				and docstatus = 1
@@ -870,14 +870,23 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 			as_dict=1,
 		)
 
-		paid_amount = 0
+		paid_principal_amount = 0
+		paid_interest_amount = 0
 		if payment_against_demand:
-			paid_amount = flt(payment_against_demand[0].paid_amount)
+			paid_principal_amount = flt(payment_against_demand[0].total_principal_paid)
+			paid_interest_amount = flt(payment_against_demand[0].total_interest_paid)
 
 		for demand in demands:
-			paid_amount -= demand.demand_amount
+			if demand.demand_subtype == "Interest":
+				paid_interest_amount -= demand.demand_amount
+			elif demand.demand_subtype == "Principal":
+				paid_principal_amount -= demand.demand_amount
 
-			if flt(paid_amount, precision) < 0 or flt(demand.outstanding_amount, precision) > 0:
+			if (
+				flt(paid_principal_amount, precision) < 0
+				or flt(paid_interest_amount, precision) < 0
+				or flt(demand.outstanding_amount, precision) > 0
+			):
 				return demand.demand_date
 
 
