@@ -849,10 +849,10 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 	)
 
 	if loan_product:
-		payment_conditions += f"AND lr.loan_product = '{loan_product}'"
+		payment_conditions += f"AND loan_product = '{loan_product}'"
 
 	if loan_product == "Line of Credit":
-		payment_conditions += f"AND lr.loan_disbursement = '{loan_disbursement}'"
+		payment_conditions += f"AND loan_disbursement = '{loan_disbursement}'"
 
 	payment_against_demand = frappe.db.sql(
 		"""
