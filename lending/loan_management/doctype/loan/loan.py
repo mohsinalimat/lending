@@ -856,14 +856,11 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 
 	payment_against_demand = frappe.db.sql(
 		"""
-		SELECT SUM(lrd.paid_amount) as paid_amount
-		FROM `tabLoan Repayment` lr, `tabLoan Repayment Detail` lrd
-		WHERE
-			lr.name = lrd.parent
-			and lr.against_loan = %s
-			and lrd.demand_type = "EMI"
-			and lr.docstatus = 1
-			and lr.posting_date <= %s
+		SELECT SUM(principal_amount_paid + total_interest_paid) as paid_amount
+		FROM `tabLoan Repayment`
+		WHERE against_loan = %s
+			and docstatus = 1
+			and posting_date <= %s
 			{0}
 	""".format(
 			payment_conditions
