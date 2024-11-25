@@ -188,10 +188,11 @@ class LoanRepayment(AccountsController):
 				dates = [getdate(d.get("posting_date")) for d in accruals]
 				max_date = max(dates)
 
-				process_loan_interest_accrual_for_loans(
-					posting_date=max_date, loan=self.against_loan, loan_product=self.loan_product
-				)
-				process_daily_loan_demands(posting_date=max_date, loan=self.against_loan)
+				if getdate(max_date) > getdate(self.posting_date):
+					process_loan_interest_accrual_for_loans(
+						posting_date=max_date, loan=self.against_loan, loan_product=self.loan_product
+					)
+					process_daily_loan_demands(posting_date=max_date, loan=self.against_loan)
 
 		if not self.is_term_loan:
 			process_loan_interest_accrual_for_loans(
