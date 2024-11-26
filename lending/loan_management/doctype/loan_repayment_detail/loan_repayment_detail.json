@@ -18,7 +18,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Loan Demand",
-   "options": "Loan Demand"
+   "options": "Loan Demand",
+   "search_index": 1
   },
   {
    "fieldname": "paid_amount",
@@ -54,7 +55,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-09-12 09:49:03.810401",
+ "modified": "2024-11-26 21:37:35.523614",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Detail",
