@@ -179,6 +179,7 @@ def make_loan_demand_for_term_loans(
 		"docstatus": 1,
 		"status": ("in", ("Disbursed", "Partially Disbursed", "Active")),
 		"is_term_loan": 1,
+		"excess_amount_paid": ("<=", 0),
 	}
 
 	if loan_product:
