@@ -161,8 +161,17 @@ class LoanRepaymentSchedule(Document):
 			bpi_accrual_doc.cancel()
 
 		if cint(self.get("reverse_interest_accruals")):
-			reverse_loan_interest_accruals(self.loan, self.posting_date, loan_repayment_schedule=self.name)
-			reverse_demands(self.loan, self.posting_date, loan_repayment_schedule=self.name)
+			frappe.enqueue(
+				reverse_loan_interest_accruals,
+				self.loan,
+				self.posting_date,
+				loan_repayment_schedule=self.name,
+				queue="long",
+			)
+
+			frappe.enqueue(
+				reverse_demands, self.loan, self.posting_date, loan_repayment_schedule=self.name, queue="long"
+			)
 
 		self.ignore_linked_doctypes = ["Loan Interest Accrual", "Loan Demand"]
 
