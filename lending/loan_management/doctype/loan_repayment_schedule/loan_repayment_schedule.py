@@ -163,14 +163,18 @@ class LoanRepaymentSchedule(Document):
 		if cint(self.get("reverse_interest_accruals")):
 			frappe.enqueue(
 				reverse_loan_interest_accruals,
-				self.loan,
-				self.posting_date,
+				loan=self.loan,
+				posting_date=self.posting_date,
 				loan_repayment_schedule=self.name,
 				queue="long",
 			)
 
 			frappe.enqueue(
-				reverse_demands, self.loan, self.posting_date, loan_repayment_schedule=self.name, queue="long"
+				reverse_demands,
+				loan=self.loan,
+				posting_date=self.posting_date,
+				loan_repayment_schedule=self.name,
+				queue="long",
 			)
 
 		self.ignore_linked_doctypes = ["Loan Interest Accrual", "Loan Demand"]
