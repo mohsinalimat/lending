@@ -1135,7 +1135,13 @@ class LoanRepayment(AccountsController):
 
 		if (
 			self.auto_close_loan() or self.principal_amount_paid - self.pending_principal_amount > 0
-		) and self.repayment_type not in ("Write Off Settlement", "Write Off Recovery"):
+		) and self.repayment_type not in (
+			"Write Off Settlement",
+			"Write Off Recovery",
+			"Charges Waiver",
+			"Interest Waiver",
+			"Penalty Waiver",
+		):
 			self.excess_amount = self.principal_amount_paid - self.pending_principal_amount
 			self.principal_amount_paid -= self.excess_amount
 		elif self.repayment_type == "Write Off Settlement" and (
