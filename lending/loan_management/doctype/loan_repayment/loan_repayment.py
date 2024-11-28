@@ -194,7 +194,7 @@ class LoanRepayment(AccountsController):
 					process_loan_interest_accrual_for_loans(
 						posting_date=max_date, loan=self.against_loan, loan_product=self.loan_product
 					)
-					process_daily_loan_demands(posting_date=max_date, loan=self.against_loan)
+					process_daily_loan_demands(posting_date=add_days(max_date, 1), loan=self.against_loan)
 
 		if not self.is_term_loan:
 			process_loan_interest_accrual_for_loans(
