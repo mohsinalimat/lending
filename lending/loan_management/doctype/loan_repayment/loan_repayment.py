@@ -126,7 +126,9 @@ class LoanRepayment(AccountsController):
 			if self.repayment_type in ("Advance Payment", "Pre Payment"):
 				self.process_reschedule()
 
-		if self.repayment_type not in ("Advance Payment", "Pre Payment"):
+		if self.repayment_type not in ("Advance Payment", "Pre Payment") or (
+			self.principal_amount_paid >= self.pending_principal_amount
+		):
 			self.book_interest_accrued_not_demanded()
 			self.book_pending_principal()
 
