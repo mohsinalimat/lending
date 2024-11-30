@@ -125,6 +125,8 @@ class LoanRepayment(AccountsController):
 
 			if self.repayment_type in ("Advance Payment", "Pre Payment"):
 				self.process_reschedule()
+		elif self.repayment_type in ("Advance Payment", "Pre Payment"):
+			self.reverse_future_accruals_and_demands()
 
 		if self.repayment_type not in ("Advance Payment", "Pre Payment") or (
 			self.principal_amount_paid >= self.pending_principal_amount
@@ -315,6 +317,13 @@ class LoanRepayment(AccountsController):
 			)
 
 	def process_reschedule(self):
+		self.reverse_future_accruals_and_demands()
+		loan_restructure = frappe.get_doc("Loan Restructure", {"loan_repayment": self.name})
+		loan_restructure.flags.ignore_links = True
+		loan_restructure.status = "Approved"
+		loan_restructure.submit()
+
+	def reverse_future_accruals_and_demands(self):
 		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
 		from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
 			reverse_loan_interest_accruals,
@@ -329,10 +338,6 @@ class LoanRepayment(AccountsController):
 		)
 
 		reverse_demands(self.against_loan, add_days(self.posting_date, 1), demand_type="EMI")
-		loan_restructure = frappe.get_doc("Loan Restructure", {"loan_repayment": self.name})
-		loan_restructure.flags.ignore_links = True
-		loan_restructure.status = "Approved"
-		loan_restructure.submit()
 
 	def set_repayment_account(self):
 		if not self.payment_account and self.mode_of_payment:
