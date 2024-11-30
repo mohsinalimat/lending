@@ -687,6 +687,7 @@ class LoanRepayment(AccountsController):
 			"Advance Payment",
 			"Security Deposit Adjustment",
 			"Loan Closure",
+			"Principal Adjustment",
 		):
 			if self.repayment_schedule_type != "Line of Credit":
 				query = query.set(loan.status, "Closed")
