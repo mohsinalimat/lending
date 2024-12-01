@@ -113,10 +113,10 @@ class LoanWriteOff(AccountsController):
 		self.update_outstanding_amount_and_status(cancel=1)
 
 	def cancel_waiver_entries(self):
-		waivers = get_write_off_waivers(self.loan, self.posting_date)
+		waivers = get_write_off_waivers_for_cancel(self.loan, self.posting_date)
 
 		for waiver in waivers:
-			frappe.get_doc("Loan Repayment", waiver.name).cancel()
+			frappe.get_doc("Loan Repayment", waiver).cancel()
 
 	def update_outstanding_amount_and_status(self, cancel=0):
 		written_off_amount = frappe.db.get_value("Loan", self.loan, "written_off_amount")
@@ -458,6 +458,19 @@ def get_suspense_entries(loan, loan_product):
 	return journal_entries
 
 
+def get_write_off_waivers_for_cancel(loan_name, posting_date):
+	return frappe.db.get_all(
+		"Loan Repayment",
+		filters={
+			"against_loan": loan_name,
+			"posting_date": ("<=", posting_date),
+			"docstatus": 1,
+			"is_write_off_waiver": 1,
+		},
+		puck="name",
+	)
+
+
 def get_write_off_waivers(loan_name, posting_date):
 	return frappe._dict(
 		frappe.db.get_all(
@@ -468,7 +481,7 @@ def get_write_off_waivers(loan_name, posting_date):
 				"docstatus": 1,
 				"is_write_off_waiver": 1,
 			},
-			fields=["repayment_type", "sum(amount_paid) as amount", "name"],
+			fields=["repayment_type", "sum(amount_paid) as amount"],
 			group_by="repayment_type",
 			as_list=1,
 		)
