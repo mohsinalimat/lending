@@ -467,7 +467,7 @@ def get_write_off_waivers_for_cancel(loan_name, posting_date):
 			"docstatus": 1,
 			"is_write_off_waiver": 1,
 		},
-		puck="name",
+		pluck="name",
 	)
 
 
