@@ -17,7 +17,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Sales Invoice",
-   "options": "Sales Invoice"
+   "options": "Sales Invoice",
+   "search_index": 1
   },
   {
    "fieldname": "pending_charge_amount",
@@ -42,7 +43,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-10-11 16:50:15.722251",
+ "modified": "2024-12-01 18:29:06.840057",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Charge Reference",
