@@ -107,9 +107,16 @@ class LoanWriteOff(AccountsController):
 
 	def on_cancel(self):
 		self.ignore_linked_doctypes = ["GL Entry", "Payment Ledger Entry"]
+		self.cancel_waiver_entries()
 		self.make_gl_entries(cancel=1)
 		self.close_employee_loan(cancel=1)
 		self.update_outstanding_amount_and_status(cancel=1)
+
+	def cancel_waiver_entries(self):
+		waivers = get_write_off_waivers(self.loan, self.posting_date)
+
+		for waiver in waivers:
+			frappe.get_doc("Loan Repayment", waiver.name).cancel()
 
 	def update_outstanding_amount_and_status(self, cancel=0):
 		written_off_amount = frappe.db.get_value("Loan", self.loan, "written_off_amount")
@@ -461,7 +468,7 @@ def get_write_off_waivers(loan_name, posting_date):
 				"docstatus": 1,
 				"is_write_off_waiver": 1,
 			},
-			fields=["repayment_type", "sum(amount_paid) as amount"],
+			fields=["repayment_type", "sum(amount_paid) as amount", "name"],
 			group_by="repayment_type",
 			as_list=1,
 		)
