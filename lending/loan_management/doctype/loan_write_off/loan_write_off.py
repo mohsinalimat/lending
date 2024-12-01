@@ -116,7 +116,9 @@ class LoanWriteOff(AccountsController):
 		waivers = get_write_off_waivers_for_cancel(self.loan, self.posting_date)
 
 		for waiver in waivers:
-			frappe.get_doc("Loan Repayment", waiver).cancel()
+			doc = frappe.get_doc("Loan Repayment", waiver)
+			doc.flags.ignore_links = True
+			doc.cancel()
 
 	def update_outstanding_amount_and_status(self, cancel=0):
 		written_off_amount = frappe.db.get_value("Loan", self.loan, "written_off_amount")
