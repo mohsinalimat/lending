@@ -33,8 +33,27 @@ class LoanRepaymentRepost(Document):
 			self.append("repayment_entries", {"loan_repayment": entry})
 
 	def on_submit(self):
+		if self.clear_demand_allocation_before_repost:
+			self.clear_demand_allocation()
+
 		self.trigger_on_cancel_events()
 		self.trigger_on_submit_events()
+
+	def clear_demand_allocation(self):
+		demands = frappe.get_all(
+			"Loan Demand",
+			{"loan": self.loan, "docstatus": 1, "demand_type": "EMI"},
+			["name", "demand_amount"],
+		)
+		for demand in demands:
+			frappe.db.set_value(
+				"Loan Demand",
+				demand.name,
+				{
+					"paid_amount": 0,
+					"outstanding_amount": demand.demand_amount,
+				},
+			)
 
 	def trigger_on_cancel_events(self):
 		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
@@ -47,6 +66,11 @@ class LoanRepaymentRepost(Document):
 				repayment_doc.flags.from_repost = False
 			else:
 				repayment_doc.docstatus = 2
+
+				if self.clear_demand_allocation_before_repost:
+					for repayment_detail in repayment_doc.get("repayment_details"):
+						if repayment_detail.demand_type == "EMI":
+							frappe.delete_doc("Loan Repayment Detail", repayment_detail.name, force=1)
 
 				if not self.ignore_on_cancel_amount_update:
 					repayment_doc.mark_as_unpaid()

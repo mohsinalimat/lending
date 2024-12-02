@@ -9,6 +9,7 @@
   "loan",
   "loan_disbursement",
   "ignore_repayment_type_update",
+  "clear_demand_allocation_before_repost",
   "column_break_bmnx",
   "repost_date",
   "cancel_future_penal_accruals_and_demands",
@@ -47,7 +48,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Loan Disbursement",
-   "options": "Loan Disbursement"
+   "options": "Loan Disbursement",
+   "search_index": 1
   },
   {
    "fieldname": "column_break_bmnx",
@@ -99,12 +101,18 @@
    "fieldtype": "Table",
    "label": "Entries To Cancel",
    "options": "Loan Repayment Repost Cancel Detail"
+  },
+  {
+   "default": "0",
+   "fieldname": "clear_demand_allocation_before_repost",
+   "fieldtype": "Check",
+   "label": "Clear demand allocation before repost"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-13 14:24:32.338066",
+ "modified": "2024-12-02 18:36:03.012288",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Repost",
