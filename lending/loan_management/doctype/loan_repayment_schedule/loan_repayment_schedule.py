@@ -179,7 +179,7 @@ class LoanRepaymentSchedule(Document):
 
 		self.ignore_linked_doctypes = ["Loan Interest Accrual", "Loan Demand"]
 
-		frappe.db.set_value("Loan Repayment Schedule", self.name, "status", "Cancelled")
+		self.db_set("status", "Cancelled")
 
 	def set_repayment_period(self):
 		if self.repayment_frequency == "One Time":
