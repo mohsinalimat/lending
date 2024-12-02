@@ -37,7 +37,18 @@ class LoanRepaymentRepost(Document):
 			self.clear_demand_allocation()
 
 		self.trigger_on_cancel_events()
+		self.process_loan_demand()
 		self.trigger_on_submit_events()
+
+	def process_loan_demand(self):
+		repayments = [d.loan_repayment for d in self.get("repayment_entries")]
+		max_demand_date = frappe.db.get_value(
+			"Loan Repayment", {"loan": self.loan, "name": ("in", repayments)}, "max(posting_date)"
+		)
+
+		frappe.get_doc(
+			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": max_demand_date}
+		).submit()
 
 	def clear_demand_allocation(self):
 		demands = frappe.get_all(
