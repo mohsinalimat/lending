@@ -42,7 +42,12 @@ class LoanRepaymentRepost(Document):
 	def clear_demand_allocation(self):
 		demands = frappe.get_all(
 			"Loan Demand",
-			{"loan": self.loan, "docstatus": 1, "demand_type": "EMI"},
+			{
+				"loan": self.loan,
+				"docstatus": 1,
+				"demand_type": "EMI",
+				"posting_date": (">=", self.repost_date),
+			},
 			["name", "demand_amount"],
 		)
 		for demand in demands:
