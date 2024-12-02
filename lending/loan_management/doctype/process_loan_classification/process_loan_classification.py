@@ -33,7 +33,7 @@ class ProcessLoanClassification(Document):
 				self.name,
 				self.payment_reference,
 				self.is_backdated,
-				self.force_update_dpd_in_loan
+				self.force_update_dpd_in_loan,
 			)
 		else:
 			BATCH_SIZE = 5000
@@ -76,7 +76,7 @@ def process_loan_classification_batch(
 				ignore_freeze=True if payment_reference else False,
 				is_backdated=is_backdated,
 				via_background_job=via_scheduler,
-				force_update_dpd_in_loan=force_update_dpd_in_loan
+				force_update_dpd_in_loan=force_update_dpd_in_loan,
 			)
 
 			if len(open_loans) > 1:
