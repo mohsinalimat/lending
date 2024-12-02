@@ -127,6 +127,8 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.update_demands()
 			repayment_doc.update_limits()
 			repayment_doc.update_security_deposit_amount()
+			repayment_doc.book_interest_accrued_not_demanded()
+			repayment_doc.book_pending_principal()
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
 
