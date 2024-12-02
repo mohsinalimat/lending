@@ -429,7 +429,9 @@ class LoanDisbursement(AccountsController):
 
 			total_payment = total_payment - topup_amount
 
-		if disbursed_amount <= 0:
+		if loan_details.repayment_schedule_type == "Line of Credit":
+			status = "Active"
+		elif disbursed_amount <= 0:
 			status = "Sanctioned"
 		elif disbursed_amount >= loan_details.loan_amount:
 			status = "Disbursed"
