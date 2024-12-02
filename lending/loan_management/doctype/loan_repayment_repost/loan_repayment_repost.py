@@ -46,7 +46,7 @@ class LoanRepaymentRepost(Document):
 				"loan": self.loan,
 				"docstatus": 1,
 				"demand_type": "EMI",
-				"posting_date": (">=", self.repost_date),
+				"demand_date": (">=", self.repost_date),
 			},
 			["name", "demand_amount"],
 		)
