@@ -43,7 +43,7 @@ class LoanRepaymentRepost(Document):
 	def process_loan_demand(self):
 		repayments = [d.loan_repayment for d in self.get("repayment_entries")]
 		max_demand_date = frappe.db.get_value(
-			"Loan Repayment", {"loan": self.loan, "name": ("in", repayments)}, "max(posting_date)"
+			"Loan Repayment", {"against_loan": self.loan, "name": ("in", repayments)}, "max(posting_date)"
 		)
 
 		frappe.get_doc(
