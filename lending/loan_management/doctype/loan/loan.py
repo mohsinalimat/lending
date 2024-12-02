@@ -1561,7 +1561,9 @@ def auto_close_loc_loans(posting_date=None):
 	loan = frappe.qb.DocType("Loan")
 
 	if loc_loans:
-		frappe.qb.update("Loan").set("status", "Closed").where(loan.name.isin(loc_loans)).run()
+		frappe.qb.update("Loan").set("status", "Closed").set("closure_date", posting_date).where(
+			loan.name.isin(loc_loans)
+		).run()
 
 
 def get_voucher_subtypes(doc):
