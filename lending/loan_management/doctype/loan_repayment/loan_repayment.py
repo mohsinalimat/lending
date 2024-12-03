@@ -2138,7 +2138,11 @@ def update_installment_counts(against_loan):
 			& (loan_demand.docstatus == 1)
 			& (loan_demand.demand_type == "EMI")
 		)
-		.groupby(loan_demand.loan_repayment_schedule, loan_demand.repayment_schedule_detail)
+		.groupby(
+			loan_demand.loan_repayment_schedule,
+			loan_demand.repayment_schedule_detail,
+			loan_demand.demand_date,
+		)
 		.run(as_dict=1)
 	)
 
