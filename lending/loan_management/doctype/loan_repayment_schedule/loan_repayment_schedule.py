@@ -490,14 +490,14 @@ class LoanRepaymentSchedule(Document):
 
 				after_bpi = 0
 
-				if self.posting_date < prev_schedule.repayment_start_date:
-					prev_repayment_date = prev_schedule.repayment_start_date
-				else:
-					prev_repayment_date = prev_schedule.posting_date
-
 				prev_balance_amount = prev_schedule.current_principal_amount
 				self.monthly_repayment_amount = prev_schedule.monthly_repayment_amount
 				first_date = prev_schedule.get(schedule_field)[0].payment_date
+
+				if self.posting_date < first_date:
+					prev_repayment_date = first_date
+				else:
+					prev_repayment_date = prev_schedule.posting_date
 
 				if getdate(first_date) < prev_schedule.repayment_start_date:
 					after_bpi = 1
