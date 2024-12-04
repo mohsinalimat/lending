@@ -489,15 +489,10 @@ class LoanRepaymentSchedule(Document):
 					self.loan_disbursement = prev_schedule.loan_disbursement
 
 				after_bpi = 0
-
+				prev_repayment_date = prev_schedule.posting_date
 				prev_balance_amount = prev_schedule.current_principal_amount
 				self.monthly_repayment_amount = prev_schedule.monthly_repayment_amount
 				first_date = prev_schedule.get(schedule_field)[0].payment_date
-
-				if self.posting_date < first_date:
-					prev_repayment_date = first_date
-				else:
-					prev_repayment_date = prev_schedule.posting_date
 
 				if getdate(first_date) < prev_schedule.repayment_start_date:
 					after_bpi = 1
@@ -610,7 +605,10 @@ class LoanRepaymentSchedule(Document):
 					balance_principal_amount = self.current_principal_amount
 					previous_interest_amount = 0
 
-					next_emi_date = self.get_next_payment_date(prev_repayment_date)
+					if self.repayment_schedule_type == "Monthly as per cycle date":
+						next_emi_date = get_cyclic_date(self.loan_product, prev_repayment_date, ignore_bpi=False)
+					else:
+						next_emi_date = self.get_next_payment_date(prev_repayment_date)
 
 					self.repayment_start_date = frappe.db.get_value(
 						"Loan Restructure", self.loan_restructure, "repayment_start_date"
