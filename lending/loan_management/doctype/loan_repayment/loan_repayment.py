@@ -208,7 +208,7 @@ class LoanRepayment(AccountsController):
 			write_off_suspense_entries,
 		)
 
-		base_amount_map = self.make_credit_note_for_charge_waivers()
+		base_amount_map = self.make_credit_note_for_charge_waivers(cancel=cancel)
 
 		foreclosure_type = frappe.db.get_value(
 			"Loan Adjustment", self.loan_adjustment, "foreclosure_type"
@@ -353,11 +353,30 @@ class LoanRepayment(AccountsController):
 		if not self.payment_account:
 			self.payment_account = frappe.db.get_value("Loan Product", self.loan_product, "payment_account")
 
-	def make_credit_note_for_charge_waivers(self):
+	def make_credit_note_for_charge_waivers(self, cancel=0):
 		base_amount_details = {}
 		from lending.loan_management.doctype.loan_demand.loan_demand import make_credit_note
 
 		if self.repayment_type == "Charges Waiver":
+			if cancel:
+				credit_notes = frappe.get_all(
+					"Sales Invoice",
+					{"loan_repayment": self.name, "docstatus": 1, "is_return": 1},
+					pluck="name",
+				)
+
+				for credit_note in credit_notes:
+					credit_note_doc = frappe.get_doc("Sales Invoice", credit_note)
+					for item in credit_note_doc.get("items"):
+						waiver_account = item.get("income_account")
+						base_amount_details.setdefault(waiver_account, 0)
+						base_amount_details[waiver_account] += abs(item.base_net_amount)
+
+					credit_note_doc.flags.ignore_links = True
+					credit_note_doc.cancel()
+
+				return base_amount_details
+
 			for demand in self.get("repayment_details"):
 				demand_doc = frappe.get_doc("Loan Demand", demand.loan_demand)
 				waiver_account = self.get_charges_waiver_account(self.loan_product, demand.demand_subtype)

@@ -427,7 +427,8 @@
    "fieldname": "loan_adjustment",
    "fieldtype": "Link",
    "label": "Loan Adjustment",
-   "options": "Loan Adjustment"
+   "options": "Loan Adjustment",
+   "search_index": 1
   },
   {
    "fieldname": "payable_charges",
@@ -513,7 +514,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-26 21:16:25.944435",
+ "modified": "2024-12-04 22:20:44.523426",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment",
