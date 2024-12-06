@@ -1825,6 +1825,12 @@ def get_demand_query():
 def get_pending_principal_amount(loan, loan_disbursement=None):
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 
+	if (
+		not loan_disbursement
+		and loan.repayment_schedule_type == "Line of Credit"
+		and loan.status == "Closed"
+	):
+		pending_principal_amount = 0
 	if loan_disbursement:
 		pending_principal_amount = frappe.db.get_value(
 			"Loan Disbursement", loan_disbursement, "sum(disbursed_amount - principal_amount_paid)"
