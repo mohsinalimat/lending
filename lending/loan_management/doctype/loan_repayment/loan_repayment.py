@@ -1887,7 +1887,7 @@ def get_amounts(
 ):
 	demand_type, demand_subtype = get_demand_type(payment_type)
 
-	against_loan_doc = frappe.get_cached_doc("Loan", against_loan)
+	against_loan_doc = frappe.get_doc("Loan", against_loan)
 	unpaid_demands = get_unpaid_demands(
 		against_loan_doc.name,
 		posting_date,
