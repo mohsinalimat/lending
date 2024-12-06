@@ -337,7 +337,7 @@ class LoanRepayment(AccountsController):
 			on_payment_allocation=True,
 		)
 
-		reverse_demands(self.against_loan, add_days(self.posting_date), demand_type="EMI")
+		reverse_demands(self.against_loan, self.posting_date, demand_type="EMI")
 
 	def set_repayment_account(self):
 		if not self.payment_account and self.mode_of_payment:
