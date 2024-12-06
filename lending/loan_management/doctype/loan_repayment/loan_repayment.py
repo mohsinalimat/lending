@@ -140,7 +140,7 @@ class LoanRepayment(AccountsController):
 		self.update_demands()
 		self.update_limits()
 		self.update_security_deposit_amount()
-		update_installment_counts(self.against_loan)
+		update_installment_counts(self.against_loan, loan_disbursement=self.loan_disbursement)
 
 		if self.repayment_type == "Full Settlement":
 			frappe.enqueue(self.post_write_off_settlements, enqueue_after_commit=True)
@@ -451,7 +451,7 @@ class LoanRepayment(AccountsController):
 		]
 		self.make_gl_entries(cancel=1)
 		self.post_suspense_entries(cancel=1)
-		update_installment_counts(self.against_loan)
+		update_installment_counts(self.against_loan, loan_disbursement=self.loan_disbursement)
 
 		max_demand_date = frappe.db.get_value(
 			"Loan Interest Accrual", {"loan": self.against_loan}, "MAX(posting_date)"
@@ -2141,14 +2141,13 @@ def init_amounts():
 	}
 
 
-def update_installment_counts(against_loan):
+def update_installment_counts(against_loan, loan_disbursement=None):
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 
 	loan_demand = frappe.qb.DocType("Loan Demand")
-	loan_demands = (
+	query = (
 		frappe.qb.from_(loan_demand)
 		.select(
-			loan_demand.loan_repayment_schedule,
 			loan_demand.repayment_schedule_detail,
 			Sum(loan_demand.outstanding_amount).as_("total_outstanding_amount"),
 		)
@@ -2158,36 +2157,47 @@ def update_installment_counts(against_loan):
 			& (loan_demand.demand_type == "EMI")
 		)
 		.groupby(
-			loan_demand.loan_repayment_schedule,
 			loan_demand.repayment_schedule_detail,
 			loan_demand.demand_date,
 		)
-		.run(as_dict=1)
 	)
 
-	count_details = {}
+	if loan_disbursement:
+		query = query.where(loan_demand.loan_disbursement == loan_disbursement)
+
+	loan_demands = query.run(as_dict=1)
+
+	total_installments_raised = 0
+	total_installments_paid = 0
+	total_installments_overdue = 0
+
 	for demand in loan_demands:
-		count_details.setdefault(
-			demand.loan_repayment_schedule,
-			{"total_installments_raised": 0, "total_installments_paid": 0, "total_installments_overdue": 0},
-		)
-
-		count_details[demand.loan_repayment_schedule]["total_installments_raised"] += 1
+		total_installments_raised += 1
 		if flt(demand.total_outstanding_amount, precision) <= 0:
-			count_details[demand.loan_repayment_schedule]["total_installments_paid"] += 1
+			total_installments_paid += 1
 		else:
-			count_details[demand.loan_repayment_schedule]["total_installments_overdue"] += 1
+			total_installments_overdue += 1
 
-	for schedule, details in count_details.items():
-		frappe.db.set_value(
-			"Loan Repayment Schedule",
-			schedule,
-			{
-				"total_installments_raised": details["total_installments_raised"],
-				"total_installments_paid": details["total_installments_paid"],
-				"total_installments_overdue": details["total_installments_overdue"],
-			},
-		)
+	schedule_filters = {
+		"loan": against_loan,
+		"docstatus": 1,
+		"status": "Active",
+	}
+
+	if loan_disbursement:
+		schedule_filters["loan_disbursement"] = loan_disbursement
+
+	schedule = frappe.db.get_value("Loan Repayment Schedule", schedule_filters, "name")
+
+	frappe.db.set_value(
+		"Loan Repayment Schedule",
+		schedule,
+		{
+			"total_installments_raised": total_installments_raised,
+			"total_installments_paid": total_installments_paid,
+			"total_installments_overdue": total_installments_overdue,
+		},
+	)
 
 
 def get_last_demand_date(
