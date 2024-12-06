@@ -502,8 +502,7 @@ class LoanRepayment(AccountsController):
 		if not self.penalty_amount:
 			self.penalty_amount = flt(amounts["penalty_amount"], precision)
 
-		if not self.pending_principal_amount:
-			self.pending_principal_amount = flt(amounts["pending_principal_amount"], precision)
+		self.pending_principal_amount = flt(amounts["pending_principal_amount"], precision)
 
 		if not self.payable_principal_amount and self.is_term_loan:
 			self.payable_principal_amount = flt(amounts["payable_principal_amount"], precision)
