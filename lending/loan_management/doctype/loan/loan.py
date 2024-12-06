@@ -433,7 +433,17 @@ def request_loan_closure(loan, posting_date=None, auto_close=0):
 		status = "Loan Closure Requested"
 		response = "Loan Closure Requested Successfully"
 
-	frappe.db.set_value("Loan", loan, "status", status)
+	values = {
+		"status": status,
+	}
+	if status == "Closed":
+		schedule = frappe.db.get_value(
+			"Loan Repayment Schedule", {"loan": loan, "status": "Active", "docstatus": 1}
+		)
+		frappe.db.set_value("Loan Repayment Schedule", schedule, "status", "Closed")
+		values["closure_date"] = posting_date
+
+	frappe.db.set_value("Loan", loan, values)
 
 	return {
 		"message": response,
