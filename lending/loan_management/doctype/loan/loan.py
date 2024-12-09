@@ -742,7 +742,12 @@ def update_days_past_due_in_loans(
 			)
 
 			dpd_date = posting_date
-			days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
+
+			if posting_date == add_days(getdate(), -1):
+				days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
+			else:
+				days_past_due = date_diff(getdate(dpd_date), getdate(demand_date))
+
 			if days_past_due < 0:
 				days_past_due = 0
 
