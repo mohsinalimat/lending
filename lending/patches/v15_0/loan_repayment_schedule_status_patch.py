@@ -8,5 +8,3 @@ def execute():
 	frappe.qb.update(LoanRepaymentSchedule).set(LoanRepaymentSchedule.status, "Cancelled").where(
 		(LoanRepaymentSchedule.docstatus == 2) & (LoanRepaymentSchedule.status != "Cancelled")
 	).run()
-
-	frappe.db.commit()
