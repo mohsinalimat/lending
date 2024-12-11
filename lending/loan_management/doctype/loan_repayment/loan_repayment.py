@@ -1872,6 +1872,8 @@ def get_demand_type(payment_type):
 		demand_subtype = "Penalty"
 	elif payment_type in ("Charges Waiver", "Charge Payment"):
 		demand_type = "Charges"
+	elif payment_type == "Advance Payment":
+		demand_type = "EMI"
 
 	return demand_type, demand_subtype
 
