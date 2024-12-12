@@ -350,6 +350,16 @@ class LoanRepayment(AccountsController):
 		if not self.payment_account and self.bank_account:
 			self.payment_account = frappe.db.get_value("Bank Account", self.bank_account, "account")
 
+		if not self.payment_account and self.repayment_type == "Interest Waiver":
+			self.payment_account = frappe.db.get_value(
+				"Loan Product", self.loan_product, "interest_waiver_account"
+			)
+
+		if not self.payment_account and self.repayment_type == "Penalty Waiver":
+			self.payment_account = frappe.db.get_value(
+				"Loan Product", self.loan_product, "penalty_waiver_account"
+			)
+
 		if not self.payment_account:
 			self.payment_account = frappe.db.get_value("Loan Product", self.loan_product, "payment_account")
 
