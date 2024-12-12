@@ -706,6 +706,9 @@ class LoanRepayment(AccountsController):
 			"Security Deposit Adjustment",
 			"Loan Closure",
 			"Principal Adjustment",
+			"Penalty Waiver",
+			"Interest Waiver",
+			"Charges Waiver",
 		):
 			if self.repayment_schedule_type != "Line of Credit":
 				query = query.set(loan.status, "Closed")
