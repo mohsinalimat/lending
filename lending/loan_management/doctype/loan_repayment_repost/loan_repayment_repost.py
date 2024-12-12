@@ -164,6 +164,18 @@ class LoanRepaymentRepost(Document):
 
 			repayment_doc.allocate_amount_against_demands(amounts)
 
+			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
+				create_update_loan_reschedule(
+					repayment_doc.against_loan,
+					repayment_doc.posting_date,
+					repayment_doc.name,
+					repayment_doc.repayment_type,
+					repayment_doc.principal_amount_paid,
+					loan_disbursement=repayment_doc.loan_disbursement,
+				)
+
+				repayment_doc.process_reschedule()
+
 			# Run on_submit events
 			repayment_doc.update_paid_amounts()
 			repayment_doc.update_demands()
@@ -176,18 +188,6 @@ class LoanRepaymentRepost(Document):
 
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
-
-			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
-				create_update_loan_reschedule(
-					repayment_doc.against_loan,
-					repayment_doc.posting_date,
-					repayment_doc.name,
-					repayment_doc.repayment_type,
-					repayment_doc.principal_amount_paid,
-					loan_disbursement=repayment_doc.loan_disbursement,
-				)
-
-				repayment_doc.process_reschedule()
 
 			update_installment_counts(self.loan)
 
