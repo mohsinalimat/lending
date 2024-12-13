@@ -39,7 +39,12 @@ class LoanDemand(AccountsController):
 
 		self.update_repayment_schedule()
 
-		if self.is_term_loan and self.demand_type == "EMI" and self.demand_subtype == "Interest":
+		if (
+			not frappe.flags.on_repost
+			and self.is_term_loan
+			and self.demand_type == "EMI"
+			and self.demand_subtype == "Interest"
+		):
 			process_loan_interest_accrual_for_loans(
 				posting_date=add_days(self.demand_date, -1), loan=self.loan
 			)
