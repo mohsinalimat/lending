@@ -41,14 +41,21 @@ class LoanRepaymentRepost(Document):
 		self.trigger_on_submit_events()
 
 	def process_loan_demand(self):
+		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
+
+		if self.cancel_future_emi_demands:
+			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
+
 		repayments = [d.loan_repayment for d in self.get("repayment_entries")]
 		max_demand_date = frappe.db.get_value(
 			"Loan Repayment", {"against_loan": self.loan, "name": ("in", repayments)}, "max(posting_date)"
 		)
 
+		frappe.flags.on_repost = True
 		frappe.get_doc(
 			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": max_demand_date}
 		).submit()
+		frappe.flags.on_repost = False
 
 	def clear_demand_allocation(self):
 		demands = frappe.get_all(
@@ -121,6 +128,7 @@ class LoanRepaymentRepost(Document):
 		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
 
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
+
 		for entry in reversed(self.get("repayment_entries", [])):
 			if entry.loan_repayment in entries_to_cancel:
 				continue
@@ -201,6 +209,3 @@ class LoanRepaymentRepost(Document):
 			)
 
 			reverse_demands(self.loan, add_days(self.repost_date, 1), demand_type="Penalty")
-
-		if self.cancel_future_emi_demands:
-			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
