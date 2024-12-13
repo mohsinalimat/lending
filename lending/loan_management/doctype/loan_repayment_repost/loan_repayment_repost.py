@@ -201,3 +201,6 @@ class LoanRepaymentRepost(Document):
 			)
 
 			reverse_demands(self.loan, add_days(self.repost_date, 1), demand_type="Penalty")
+
+		if self.cancel_future_emi_demands:
+			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
