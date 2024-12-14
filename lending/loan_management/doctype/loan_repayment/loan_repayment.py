@@ -2068,8 +2068,14 @@ def get_bulk_due_details(loans, posting_date):
 def get_all_demands(loans, posting_date):
 	loan_demand = frappe.qb.DocType("Loan Demand")
 
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	query = get_demand_query()
-	query = query.where(loan_demand.loan.isin(loans)).where(loan_demand.demand_date <= posting_date)
+	query = (
+		query.where(loan_demand.docstatus == 1)
+		.where(loan_demand.loan.isin(loans))
+		.where(loan_demand.demand_date <= posting_date)
+		.where(Round(loan_demand.outstanding_amount, precision) > 0)
+	)
 
 	return query.run(as_dict=1)
 
