@@ -1005,17 +1005,26 @@ class LoanRepayment(AccountsController):
 		self.total_partner_principal_share = 0
 		self.total_partner_interest_share = 0
 		self.excess_amount = 0
+		settlement_date = None
 
 		for demand in amounts.get("unpaid_demands"):
 			if demand.get("demand_subtype") == "Principal":
 				total_demanded_principal += demand.get("outstanding_amount")
 
-		if self.repayment_type in ("Write Off Recovery", "Write Off Settlement"):
+		if (
+			self.repayment_type in ("Write Off Recovery", "Write Off Settlement")
+			or loan_status == "Settled"
+		):
 			if not self.total_charges_payable:
 				self.total_charges_payable = 0
 
+			if loan_status == "Settled":
+				settlement_date = frappe.db.get_value("Loan", self.against_loan, "settlement_date")
+
 			waiver_details = get_write_off_waivers(self.against_loan, self.posting_date)
-			recovery_details = get_write_off_recovery_details(self.against_loan, self.posting_date)
+			recovery_details = get_write_off_recovery_details(
+				self.against_loan, self.posting_date, settlement_date=settlement_date
+			)
 			pending_interest = flt(waiver_details.get("Interest Waiver")) - flt(
 				recovery_details.get("total_interest")
 			)
@@ -1061,7 +1070,10 @@ class LoanRepayment(AccountsController):
 				allocation_order = frappe.db.get_value(
 					"Company", self.company, "collection_offset_sequence_for_written_off_asset"
 				)
-			elif self.repayment_type in ("Partial Settlement", "Full Settlement", "Principal Adjustment"):
+			elif (
+				self.repayment_type in ("Partial Settlement", "Full Settlement", "Principal Adjustment")
+				or loan_status == "Settled"
+			):
 				allocation_order = frappe.db.get_value(
 					"Company", self.company, "collection_offset_sequence_for_settlement_collection"
 				)
@@ -1080,7 +1092,7 @@ class LoanRepayment(AccountsController):
 				self.principal_amount_paid = self.amount_paid
 
 			amount_paid = self.apply_allocation_order(
-				allocation_order, amount_paid, amounts.get("unpaid_demands")
+				allocation_order, amount_paid, amounts.get("unpaid_demands"), status=loan_status
 			)
 
 		for payment in self.repayment_details:
@@ -1278,7 +1290,7 @@ class LoanRepayment(AccountsController):
 
 		return amount_paid
 
-	def apply_allocation_order(self, allocation_order, pending_amount, demands):
+	def apply_allocation_order(self, allocation_order, pending_amount, demands, status=None):
 		"""Allocate amount based on allocation order"""
 		allocation_order_doc = frappe.get_doc("Loan Demand Offset Order", allocation_order)
 		for d in allocation_order_doc.get("components"):
@@ -1290,12 +1302,16 @@ class LoanRepayment(AccountsController):
 				pending_amount = self.adjust_component(
 					pending_amount, "EMI", demands, demand_subtype="Principal"
 				)
-				if self.repayment_type in (
-					"Partial Settlement",
-					"Full Settlement",
-					"Write Off Recovery",
-					"Write Off Settlement",
-					"Principal Adjustment",
+				if (
+					self.repayment_type
+					in (
+						"Partial Settlement",
+						"Full Settlement",
+						"Write Off Recovery",
+						"Write Off Settlement",
+						"Principal Adjustment",
+					)
+					or status == "Settled"
 				):
 					principal_amount_paid = sum(
 						d.paid_amount for d in self.get("repayment_details") if d.demand_subtype == "Principal"

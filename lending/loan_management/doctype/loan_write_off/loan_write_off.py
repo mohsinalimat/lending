@@ -492,15 +492,18 @@ def get_write_off_waivers(loan_name, posting_date):
 	)
 
 
-def get_write_off_recovery_details(loan_name, posting_date):
+def get_write_off_recovery_details(loan_name, posting_date, settlement_date=None):
+
+	filters = {"against_loan": loan_name, "posting_date": ("<=", posting_date), "docstatus": 1}
+
+	if settlement_date:
+		filters["posting_date"] = (">", settlement_date)
+	else:
+		filters["repayment_type"] = ("in", ["Write Off Recovery", "Write Off Settlement"])
+
 	write_of_recovery_details = frappe.db.get_value(
 		"Loan Repayment",
-		{
-			"against_loan": loan_name,
-			"posting_date": ("<=", posting_date),
-			"docstatus": 1,
-			"repayment_type": ("in", ["Write Off Recovery", "Write Off Settlement"]),
-		},
+		filters,
 		[
 			"sum(total_penalty_paid) as total_penalty",
 			"sum(total_interest_paid) as total_interest",
