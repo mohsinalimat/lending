@@ -110,9 +110,14 @@ class LoanRepaymentRepost(Document):
 					repayment_doc.name,
 				)
 
+			filters = {"against_loan": self.loan, "docstatus": 1, "posting_date": ("<", self.repost_date)}
+
+			if self.loan_disbursement:
+				filters["loan_disbursement"] = self.loan_disbursement
+
 			totals = frappe.db.get_value(
 				"Loan Repayment",
-				{"against_loan": self.loan, "docstatus": 1, "posting_date": ("<", self.repost_date)},
+				filters,
 				[
 					"SUM(principal_amount_paid) as total_principal_paid",
 					"SUM(amount_paid) as total_amount_paid",
@@ -127,6 +132,14 @@ class LoanRepaymentRepost(Document):
 					"total_amount_paid": totals.total_amount_paid,
 				},
 			)
+
+			if self.loan_disbursement:
+				frappe.db.set_value(
+					"Loan Disbursement",
+					self.loan_disbursement,
+					"principal_amount_paid",
+					totals.total_principal_paid,
+				)
 
 	def trigger_on_submit_events(self):
 		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
