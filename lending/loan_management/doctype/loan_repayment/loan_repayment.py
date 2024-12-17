@@ -358,7 +358,7 @@ class LoanRepayment(AccountsController):
 			"Security Deposit Adjustment": "security_deposit_account",
 		}
 
-		if not self.payment_account and self.repayment_type in repayment_account_map:
+		if not self.payment_account and repayment_account_map.get(self.repayment_type):
 			self.payment_account = frappe.db.get_value(
 				"Loan Product", self.loan_product, repayment_account_map.get(self.repayment_type)
 			)
