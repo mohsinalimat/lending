@@ -122,6 +122,7 @@ class LoanRepaymentRepost(Document):
 					"SUM(principal_amount_paid) as total_principal_paid",
 					"SUM(amount_paid) as total_amount_paid",
 				],
+				as_dict=1,
 			)
 
 			frappe.db.set_value(
