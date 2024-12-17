@@ -177,6 +177,7 @@ class LoanRepayment(AccountsController):
 					loan=self.against_loan,
 					payment_reference=self.name,
 					is_backdated=1,
+					force_update_dpd_in_loan=1,
 				)
 			else:
 				frappe.enqueue(
@@ -185,6 +186,7 @@ class LoanRepayment(AccountsController):
 					loan_product=self.loan_product,
 					loan=self.against_loan,
 					is_backdated=0,
+					force_update_dpd_in_loan=1,
 					enqueue_after_commit=True,
 				)
 
