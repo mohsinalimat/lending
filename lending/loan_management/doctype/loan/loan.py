@@ -707,7 +707,7 @@ def update_days_past_due_in_loans(
 	ignore_freeze=False,
 	is_backdated=0,
 	via_background_job=False,
-	force_update_dpd_in_loan=False,
+	force_update_dpd_in_loan=0,
 ):
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import get_unpaid_demands
 
@@ -724,7 +724,7 @@ def update_days_past_due_in_loans(
 	)
 
 	for disbursement in disbursements:
-		if posting_date == add_days(getdate(), -1):
+		if posting_date == add_days(getdate(), -1) or force_update_dpd_in_loan:
 			demand = get_unpaid_demands(
 				loan_name,
 				posting_date=posting_date,
