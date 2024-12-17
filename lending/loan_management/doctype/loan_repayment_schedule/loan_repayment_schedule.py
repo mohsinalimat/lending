@@ -68,23 +68,19 @@ class LoanRepaymentSchedule(Document):
 
 		if self.restructure_type == "Advance Payment":
 			set_demand(advance_payment.name)
-			interest_amount = advance_payment.interest_amount
-			principal_amount = advance_payment.principal_amount
-			paid_interest_amount = advance_payment.interest_amount
-			paid_principal_amount = advance_payment.principal_amount
-		else:
-			prepayment_details = frappe.db.get_value(
-				"Loan Restructure",
-				self.loan_restructure,
-				["unaccrued_interest", "principal_adjusted", "balance_principal"],
-				as_dict=1,
-			)
 
-			interest_amount = prepayment_details.unaccrued_interest
-			principal_amount = abs(prepayment_details.balance_principal)
-			principal_balance = prepayment_details.balance_principal
-			paid_interest_amount = interest_amount
-			paid_principal_amount = principal_amount
+		prepayment_details = frappe.db.get_value(
+			"Loan Restructure",
+			self.loan_restructure,
+			["unaccrued_interest", "principal_adjusted", "balance_principal"],
+			as_dict=1,
+		)
+
+		interest_amount = prepayment_details.unaccrued_interest
+		principal_amount = abs(prepayment_details.balance_principal)
+		principal_balance = prepayment_details.balance_principal
+		paid_interest_amount = interest_amount
+		paid_principal_amount = principal_amount
 
 		if flt(interest_amount) > 0:
 			create_loan_demand(
