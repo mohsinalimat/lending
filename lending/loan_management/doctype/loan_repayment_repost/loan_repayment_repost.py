@@ -97,9 +97,6 @@ class LoanRepaymentRepost(Document):
 			else:
 				repayment_doc.docstatus = 2
 
-				if not self.ignore_on_cancel_amount_update:
-					repayment_doc.mark_as_unpaid()
-
 				repayment_doc.update_demands(cancel=1)
 				repayment_doc.update_limits(cancel=1)
 				repayment_doc.update_security_deposit_amount(cancel=1)
@@ -112,6 +109,24 @@ class LoanRepaymentRepost(Document):
 					"DELETE FROM `tabGL Entry` WHERE voucher_type='Loan Repayment' AND voucher_no=%s",
 					repayment_doc.name,
 				)
+
+			totals = frappe.db.get_value(
+				"Loan Repayment",
+				{"against_loan": self.loan, "docstatus": 1, "posting_date": ("<", self.repost_date)},
+				[
+					"SUM(principal_amount_paid) as total_principal_paid",
+					"SUM(amount_paid) as total_amount_paid",
+				],
+			)
+
+			frappe.db.set_value(
+				"Loan",
+				self.loan,
+				{
+					"total_principal_paid": totals.total_principal_paid,
+					"total_amount_paid": totals.total_amount_paid,
+				},
+			)
 
 	def trigger_on_submit_events(self):
 		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
@@ -183,11 +198,6 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.update_demands()
 			repayment_doc.update_limits()
 			repayment_doc.update_security_deposit_amount()
-
-			# if repayment_doc.repayment_type not in ("Advance Payment", "Pre Payment"):
-			# 	repayment_doc.book_interest_accrued_not_demanded()
-			# 	repayment_doc.book_pending_principal()
-
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
 
