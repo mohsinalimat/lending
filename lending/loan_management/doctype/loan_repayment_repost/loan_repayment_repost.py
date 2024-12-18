@@ -129,8 +129,8 @@ class LoanRepaymentRepost(Document):
 				"Loan",
 				self.loan,
 				{
-					"total_principal_paid": totals.total_principal_paid,
-					"total_amount_paid": totals.total_amount_paid,
+					"total_principal_paid": flt(totals.total_principal_paid),
+					"total_amount_paid": flt(totals.total_amount_paid),
 				},
 			)
 
@@ -139,7 +139,7 @@ class LoanRepaymentRepost(Document):
 					"Loan Disbursement",
 					self.loan_disbursement,
 					"principal_amount_paid",
-					totals.total_principal_paid,
+					flt(totals.total_principal_paid),
 				)
 
 	def trigger_on_submit_events(self):
@@ -191,7 +191,7 @@ class LoanRepaymentRepost(Document):
 			)
 
 			repayment_doc.set("pending_principal_amount", flt(pending_principal_amount, precision))
-			repayment_doc.before_validate()
+			repayment_doc.run_method("before_validate")
 
 			repayment_doc.allocate_amount_against_demands(amounts)
 
