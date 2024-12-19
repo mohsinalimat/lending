@@ -830,6 +830,7 @@ def reverse_loan_interest_accruals(
 	loan_repayment_schedule=None,
 	is_npa=0,
 	on_payment_allocation=False,
+	loan_disbursement=None,
 ):
 	from lending.loan_management.doctype.loan_write_off.loan_write_off import (
 		write_off_suspense_entries,
@@ -849,6 +850,9 @@ def reverse_loan_interest_accruals(
 
 	if loan_repayment_schedule:
 		filters["loan_repayment_schedule"] = loan_repayment_schedule
+
+	if loan_disbursement:
+		filters["loan_disbursement"] = loan_disbursement
 
 	accruals = (
 		frappe.get_all("Loan Interest Accrual", filters=filters, fields=["name", "posting_date"]) or []

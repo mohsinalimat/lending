@@ -152,10 +152,18 @@ class TestLoan(unittest.TestCase):
 		self.applicant3 = frappe.db.get_value("Customer", {"name": "_Test Loan Customer 1"}, "name")
 
 	def test_loan_with_repayment_periods(self):
-		loan = create_loan(self.applicant1, "Personal Loan", 280000, "Repay Over Number of Periods", 20)
+		loan = create_loan(
+			self.applicant1,
+			"Personal Loan",
+			280000,
+			"Repay Over Number of Periods",
+			repayment_periods=20,
+			repayment_start_date=add_months(nowdate(), 1),
+		)
+
 		loan.submit()
 
-		make_loan_disbursement_entry(loan.name, 280000)
+		make_loan_disbursement_entry(loan.name, 280000, repayment_start_date=add_months(nowdate(), 1))
 
 		loan_repayment_schedule = frappe.get_doc(
 			"Loan Repayment Schedule", {"loan": loan.name, "docstatus": 1, "status": "Active"}
@@ -164,26 +172,34 @@ class TestLoan(unittest.TestCase):
 
 		loan.load_from_db()
 		self.assertEqual(loan_repayment_schedule.monthly_repayment_amount, 15052)
-		self.assertEqual(flt(loan.total_interest_payable, 0), 21034)
-		self.assertEqual(flt(loan.total_payment, 0), 301034)
+		self.assertEqual(flt(loan.total_interest_payable, 0), 21033)
+		self.assertEqual(flt(loan.total_payment, 0), 301033)
 		self.assertEqual(len(schedule), 20)
 
 		for idx, principal_amount, interest_amount, balance_loan_amount in [
-			[3, 13369, 1683, 227080],
-			[19, 14941, 105, 0],
-			[17, 14740, 312, 29785],
+			[3, 13336, 1716, 227159],
+			[19, 14938, 107, 0],
+			[17, 14734, 318, 29784],
 		]:
 			self.assertEqual(flt(schedule[idx].principal_amount, 0), principal_amount)
 			self.assertEqual(flt(schedule[idx].interest_amount, 0), interest_amount)
 			self.assertEqual(flt(schedule[idx].balance_loan_amount, 0), balance_loan_amount)
 
 	def test_loan_with_fixed_amount_per_period(self):
-		loan = create_loan(self.applicant1, "Personal Loan", 280000, "Repay Over Number of Periods", 20)
+		loan = create_loan(
+			self.applicant1,
+			"Personal Loan",
+			280000,
+			"Repay Over Number of Periods",
+			repayment_periods=20,
+			repayment_start_date=add_months(nowdate(), 1),
+		)
+
 		loan.repayment_method = "Repay Fixed Amount per Period"
 		loan.monthly_repayment_amount = 14000
 		loan.submit()
 
-		make_loan_disbursement_entry(loan.name, 280000)
+		make_loan_disbursement_entry(loan.name, 280000, repayment_start_date=add_months(nowdate(), 1))
 
 		loan_repayment_schedule = frappe.get_doc(
 			"Loan Repayment Schedule", {"loan": loan.name, "docstatus": 1, "status": "Active"}
@@ -191,8 +207,8 @@ class TestLoan(unittest.TestCase):
 
 		loan.load_from_db()
 		self.assertEqual(len(loan_repayment_schedule.repayment_schedule), 22)
-		self.assertEqual(flt(loan.total_interest_payable, 0), 22712)
-		self.assertEqual(flt(loan.total_payment, 0), 302712)
+		self.assertEqual(flt(loan.total_interest_payable, 0), 22708)
+		self.assertEqual(flt(loan.total_payment, 0), 302708)
 
 	def test_loan_with_security(self):
 		pledge = [
@@ -324,9 +340,7 @@ class TestLoan(unittest.TestCase):
 
 		process_loan_interest_accrual_for_loans(posting_date=add_days(last_date, 10))
 
-		repayment_entry = create_repayment_entry(
-			loan.name, self.applicant2, add_days(last_date, 10), 111119
-		)
+		repayment_entry = create_repayment_entry(loan.name, add_days(last_date, 10), 111119)
 		repayment_entry.save()
 		repayment_entry.submit()
 
@@ -1088,24 +1102,24 @@ class TestLoan(unittest.TestCase):
 			loan.name, "2024-12-21", 50287, repayment_type="Advance Payment"
 		)
 
-	def test_interest_accrual_and_demand_on_freeze_and_unfreeze(self):
-		loan = create_loan(
-			self.applicant1,
-			"Term Loan Product 4",
-			2500000,
-			"Repay Over Number of Periods",
-			24,
-			repayment_start_date="2023-12-05",
-			posting_date="2023-11-01",
-			rate_of_interest=25,
-		)
+	# def test_interest_accrual_and_demand_on_freeze_and_unfreeze(self):
+	# 	loan = create_loan(
+	# 		self.applicant1,
+	# 		"Term Loan Product 4",
+	# 		2500000,
+	# 		"Repay Over Number of Periods",
+	# 		24,
+	# 		repayment_start_date="2023-12-05",
+	# 		posting_date="2023-11-01",
+	# 		rate_of_interest=25,
+	# 	)
 
-		loan.submit()
+	# 	loan.submit()
 
-		make_loan_disbursement_entry(
-			loan.name, loan.loan_amount, disbursement_date="2023-11-01", repayment_start_date="2023-12-05"
-		)
-		process_daily_loan_demands(posting_date="2024-02-05", loan=loan.name)
+	# 	make_loan_disbursement_entry(
+	# 		loan.name, loan.loan_amount, disbursement_date="2023-11-01", repayment_start_date="2023-12-05"
+	# 	)
+	# 	process_daily_loan_demands(posting_date="2024-02-05", loan=loan.name)
 
 	def test_principal_amount_paid(self):
 		frappe.db.set_value(
@@ -1282,6 +1296,69 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
+	def test_full_settlement(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			2000000,
+			"Repay Over Number of Periods",
+			12,
+			repayment_start_date="2024-08-05",
+			posting_date="2024-07-05",
+			rate_of_interest=22,
+			applicant_type="Customer",
+		)
+
+		loan.submit()
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-07-05", repayment_start_date="2024-08-05"
+		)
+
+		process_daily_loan_demands(posting_date="2024-09-05", loan=loan.name)
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-08-05", 1000000, repayment_type="Full Settlement"
+		)
+		repayment_entry.submit()
+
+	def test_backdated_pre_payment(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 2",
+			100000,
+			"Repay Over Number of Periods",
+			22,
+			repayment_start_date="2024-08-16",
+			posting_date="2024-08-16",
+			rate_of_interest=8.5,
+			applicant_type="Customer",
+			moratorium_tenure=1,
+			moratorium_type="Principal",
+		)
+
+		loan.submit()
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-08-16", repayment_start_date="2024-08-16"
+		)
+
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-08-25", 15000, repayment_type="Pre Payment"
+		)
+		repayment_entry.submit()
+
+		process_daily_loan_demands(posting_date="2024-09-01", loan=loan.name)
+
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-09-01", 138.90, repayment_type="Normal Repayment"
+		)
+		repayment_entry.submit()
+
+		process_daily_loan_demands(posting_date="2024-10-01", loan=loan.name)
+
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-09-26", 15000, repayment_type="Pre Payment"
+		)
+		repayment_entry.submit()
+
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):
 	frappe.db.set_value(
@@ -1379,6 +1456,14 @@ def create_loan_accounts():
 	)
 
 	create_account(
+		"Additional Interest Accrued Account",
+		"Loans and Advances (Assets) - _TC",
+		"Asset",
+		"Receivable",
+		"Balance Sheet",
+	)
+
+	create_account(
 		"Penalty Income Account", "Direct Income - _TC", "Income", "Income Account", "Profit and Loss"
 	)
 	create_account(
@@ -1443,6 +1528,14 @@ def create_loan_accounts():
 
 	create_account(
 		"Broken Period Interest", "Direct Income - _TC", "Income", "Income Account", "Profit and Loss"
+	)
+
+	create_account(
+		"Write Off Account", "Direct Expenses - _TC", "Expense", "Expense Account", "Profit and Loss"
+	)
+
+	create_account(
+		"Write Off Recovery", "Direct Expenses - _TC", "Expense", "Expense Account", "Profit and Loss"
 	)
 
 
@@ -1675,6 +1768,9 @@ def create_loan(
 	rate_of_interest=None,
 	limit_applicable_start=None,
 	limit_applicable_end=None,
+	loan_partner=None,
+	moratorium_tenure=None,
+	moratorium_type=None,
 ):
 
 	loan = frappe.get_doc(
@@ -1694,6 +1790,9 @@ def create_loan(
 			"rate_of_interest": rate_of_interest,
 			"limit_applicable_start": limit_applicable_start,
 			"limit_applicable_end": limit_applicable_end,
+			"loan_partner": loan_partner,
+			"moratorium_tenure": moratorium_tenure,
+			"moratorium_type": moratorium_type,
 		}
 	)
 

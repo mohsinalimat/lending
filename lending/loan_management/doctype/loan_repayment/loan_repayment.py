@@ -102,6 +102,9 @@ class LoanRepayment(AccountsController):
 			self.get("prepayment_charges"),
 		)
 
+		if self.repayment_type in ("Advance Payment", "Pre Payment"):
+			self.reverse_future_accruals_and_demands()
+
 		if not self.principal_amount_paid >= self.pending_principal_amount:
 			if self.is_term_loan and self.repayment_type in ("Advance Payment", "Pre Payment"):
 				amounts = calculate_amounts(
@@ -123,10 +126,7 @@ class LoanRepayment(AccountsController):
 					loan_disbursement=self.loan_disbursement,
 				)
 
-			if self.repayment_type in ("Advance Payment", "Pre Payment"):
 				self.process_reschedule()
-		elif self.repayment_type in ("Advance Payment", "Pre Payment"):
-			self.reverse_future_accruals_and_demands()
 
 		if self.repayment_type not in ("Advance Payment", "Pre Payment") or (
 			self.principal_amount_paid >= self.pending_principal_amount
@@ -319,13 +319,12 @@ class LoanRepayment(AccountsController):
 			)
 
 	def process_reschedule(self):
-		self.reverse_future_accruals_and_demands()
 		loan_restructure = frappe.get_doc("Loan Restructure", {"loan_repayment": self.name})
 		loan_restructure.flags.ignore_links = True
 		loan_restructure.status = "Approved"
 		loan_restructure.submit()
 
-	def reverse_future_accruals_and_demands(self):
+	def reverse_future_accruals_and_demands(self, on_settlement_or_closure=False):
 		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
 		from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
 			reverse_loan_interest_accruals,
@@ -337,9 +336,16 @@ class LoanRepayment(AccountsController):
 			interest_type="Normal Interest",
 			is_npa=self.is_npa,
 			on_payment_allocation=True,
+			loan_disbursement=self.loan_disbursement,
 		)
 
-		reverse_demands(self.against_loan, self.posting_date, demand_type="EMI")
+		reverse_demands(
+			self.against_loan,
+			self.posting_date,
+			demand_type="EMI",
+			loan_disbursement=self.loan_disbursement,
+			on_settlement_or_closure=on_settlement_or_closure,
+		)
 
 	def set_repayment_account(self):
 		if not self.payment_account and self.mode_of_payment:
@@ -737,6 +743,7 @@ class LoanRepayment(AccountsController):
 
 		query.run()
 
+		self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
 		update_shortfall_status(self.against_loan, self.principal_amount_paid)
 
 	def post_write_off_settlements(self):
