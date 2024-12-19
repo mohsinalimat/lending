@@ -104,11 +104,8 @@ class LoanRepaymentRepost(Document):
 				if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
 					repayment_doc.cancel_loan_restructure()
 
-				# Delete GL Entries
-				frappe.db.sql(
-					"DELETE FROM `tabGL Entry` WHERE voucher_type='Loan Repayment' AND voucher_no=%s",
-					repayment_doc.name,
-				)
+				# cancel GL Entries
+				repayment_doc.make_gl_entries(cancel=1)
 
 			filters = {"against_loan": self.loan, "docstatus": 1, "posting_date": ("<", self.repost_date)}
 
