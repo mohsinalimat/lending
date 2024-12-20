@@ -1098,9 +1098,19 @@ class TestLoan(unittest.TestCase):
 		repayment_entry = create_repayment_entry(loan.name, "2024-12-05", 251435)
 		repayment_entry.submit()
 
-		repayment_entry = create_repayment_entry(
-			loan.name, "2024-12-21", 50287, repayment_type="Advance Payment"
+		repayment_entry1 = create_repayment_entry(
+			loan.name, "2024-12-21", 150287, repayment_type="Pre Payment"
 		)
+		repayment_entry1.submit()
+
+		repayment_entry2 = create_repayment_entry(
+			loan.name, "2024-12-21", 150287, repayment_type="Pre Payment"
+		)
+		repayment_entry2.submit()
+
+		# Cancel the entry to check if correct schedule becomes active
+		repayment_entry1.cancel()
+		repayment_entry2.cancel()
 
 	# def test_interest_accrual_and_demand_on_freeze_and_unfreeze(self):
 	# 	loan = create_loan(

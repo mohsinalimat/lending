@@ -317,12 +317,7 @@ class LoanRestructure(AccountsController):
 		doc.cancel()
 
 	def update_totals_and_status(self):
-		if self.restructure_type == "Normal Restructure":
-			status = "Restructured"
-		else:
-			status = "Rescheduled"
-
-		filters = {"docstatus": 1, "loan": self.loan, "status": status}
+		filters = {"docstatus": 1, "loan": self.loan}
 
 		if self.loan_disbursement:
 			filters["loan_disbursement"] = self.loan_disbursement
