@@ -176,7 +176,7 @@ class Loan(AccountsController):
 			update_days_past_due_in_loans(posting_date=self.get("freeze_date"), loan_name=self.name)
 			process_loan_interest_accrual_for_loans(posting_date=self.get("freeze_date"), loan=self.name)
 		elif self.has_value_changed("freeze_account") and not self.freeze_account:
-			self.freeze_date = None
+			self.db_set("freeze_date", None)
 			process_loan_interest_accrual_for_loans(posting_date=nowdate(), loan=self.name)
 			create_loan_feeze_log(self.name, None, self.get("freeze_reason"), unfreeze_date=nowdate())
 
