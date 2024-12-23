@@ -113,6 +113,11 @@ class LoanWriteOff(AccountsController):
 		self.update_outstanding_amount_and_status(cancel=1)
 
 	def cancel_waiver_entries(self):
+		write_off_count = frappe.db.count("Loan Write Off", {"loan": self.loan, "docstatus": 1})
+
+		if write_off_count > 1:
+			return
+
 		waivers = get_write_off_waivers_for_cancel(self.loan, self.posting_date)
 
 		for waiver in waivers:
@@ -122,6 +127,7 @@ class LoanWriteOff(AccountsController):
 
 	def update_outstanding_amount_and_status(self, cancel=0):
 		written_off_amount = frappe.db.get_value("Loan", self.loan, "written_off_amount")
+		write_off_count = frappe.db.count("Loan Write Off", {"loan": self.loan, "docstatus": 1})
 
 		if cancel:
 			written_off_amount -= self.write_off_amount
@@ -130,7 +136,7 @@ class LoanWriteOff(AccountsController):
 
 		update_values = {"written_off_amount": written_off_amount}
 
-		if not (self.is_settlement_write_off or cancel):
+		if not (self.is_settlement_write_off or cancel) or write_off_count > 1:
 			update_values["status"] = "Written Off"
 		elif not self.is_settlement_write_off:
 			update_values["status"] = "Disbursed"
