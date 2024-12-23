@@ -156,6 +156,7 @@ class LoanRepaymentRepost(Document):
 				continue
 
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
+			repayment_doc.flags.from_repost = True
 			for entry in repayment_doc.get("repayment_details"):
 				frappe.delete_doc("Loan Repayment Detail", entry.name, force=1)
 
@@ -209,3 +210,5 @@ class LoanRepaymentRepost(Document):
 			repayment_doc.make_gl_entries()
 
 			update_installment_counts(self.loan)
+
+			repayment_doc.flags.from_repost = False

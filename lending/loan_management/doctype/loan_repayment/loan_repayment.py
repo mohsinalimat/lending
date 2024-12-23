@@ -743,7 +743,9 @@ class LoanRepayment(AccountsController):
 
 		query.run()
 
-		self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
+		if not self.flags.from_repost:
+			self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
+
 		update_shortfall_status(self.against_loan, self.principal_amount_paid)
 
 	def post_write_off_settlements(self):
