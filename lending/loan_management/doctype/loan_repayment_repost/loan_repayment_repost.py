@@ -199,6 +199,7 @@ class LoanRepaymentRepost(Document):
 					loan_disbursement=repayment_doc.loan_disbursement,
 				)
 
+				repayment_doc.reverse_future_accruals_and_demands()
 				repayment_doc.process_reschedule()
 
 			# Run on_submit events
