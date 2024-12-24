@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, getdate
 
 from lending.loan_management.doctype.loan_repayment.loan_repayment import (
 	calculate_amounts,
@@ -27,35 +27,30 @@ class LoanRepaymentRepost(Document):
 			filters["loan_disbursement"] = self.loan_disbursement
 
 		entries = frappe.get_all(
-			"Loan Repayment", filters, pluck="name", order_by="posting_date desc, creation desc"
+			"Loan Repayment", filters, ["name", "posting_date"], order_by="posting_date desc, creation desc"
 		)
 		for entry in entries:
-			self.append("repayment_entries", {"loan_repayment": entry})
+			self.append(
+				"repayment_entries",
+				{
+					"loan_repayment": entry.name,
+					"posting_date": entry.posting_date,
+				},
+			)
 
 	def on_submit(self):
 		if self.clear_demand_allocation_before_repost:
 			self.clear_demand_allocation()
 
 		self.trigger_on_cancel_events()
-		self.process_loan_demand()
+		self.cancel_demands()
 		self.trigger_on_submit_events()
 
-	def process_loan_demand(self):
+	def cancel_demands(self):
 		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
 
 		if self.cancel_future_emi_demands:
 			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
-
-		repayments = [d.loan_repayment for d in self.get("repayment_entries")]
-		max_demand_date = frappe.db.get_value(
-			"Loan Repayment", {"against_loan": self.loan, "name": ("in", repayments)}, "max(posting_date)"
-		)
-
-		frappe.flags.on_repost = True
-		frappe.get_doc(
-			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": max_demand_date}
-		).submit()
-		frappe.flags.on_repost = False
 
 	def clear_demand_allocation(self):
 		demands = frappe.get_all(
@@ -155,8 +150,15 @@ class LoanRepaymentRepost(Document):
 			if entry.loan_repayment in entries_to_cancel:
 				continue
 
+			frappe.flags.on_repost = True
+
+			frappe.get_doc(
+				{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": entry.posting_date}
+			).submit()
+
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
 			repayment_doc.flags.from_repost = True
+
 			for entry in repayment_doc.get("repayment_details"):
 				frappe.delete_doc("Loan Repayment Detail", entry.name, force=1)
 
@@ -213,3 +215,8 @@ class LoanRepaymentRepost(Document):
 			update_installment_counts(self.loan)
 
 			repayment_doc.flags.from_repost = False
+			frappe.flags.on_repost = False
+
+		frappe.get_doc(
+			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": getdate()}
+		).submit()
