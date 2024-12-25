@@ -9,6 +9,7 @@
   "loan",
   "loan_disbursement",
   "clear_demand_allocation_before_repost",
+  "delete_gl_entries",
   "column_break_bmnx",
   "repost_date",
   "cancel_future_penal_accruals_and_demands",
@@ -107,12 +108,18 @@
    "fieldname": "cancel_future_emi_demands",
    "fieldtype": "Check",
    "label": "Cancel future EMI Demands"
+  },
+  {
+   "default": "0",
+   "fieldname": "delete_gl_entries",
+   "fieldtype": "Check",
+   "label": "Delete GL Entries"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-17 19:13:11.296523",
+ "modified": "2024-12-25 18:09:28.227848",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Repost",
