@@ -2155,7 +2155,7 @@ def calculate_amounts(
 		)
 
 	amounts["available_security_deposit"] = frappe.db.get_value(
-		"Loan Security Deposit", {"loan": against_loan}, "sum(deposit_amount - allocated_amount)"
+		"Loan Security Deposit", {"loan": against_loan}, "sum(available_amount)"
 	)
 
 	# update values for closure
