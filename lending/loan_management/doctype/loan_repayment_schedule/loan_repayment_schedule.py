@@ -118,7 +118,7 @@ class LoanRepaymentSchedule(Document):
 			self.rate_of_interest,
 			self.current_principal_amount - principal_balance,
 			last_accrual_date,
-			self.posting_date,
+			add_days(self.posting_date, -1),
 		)
 
 		if payable_interest > 0:

@@ -688,7 +688,7 @@ def get_last_accrual_date(
 		filters["posting_date"] = ("<=", posting_date)
 
 	last_interest_accrual_date = frappe.db.get_value(
-		"Loan Interest Accrual", filters, "MAX(posting_date)"
+		"Loan Interest Accrual", filters, "MAX(posting_date)", for_update=True
 	)
 
 	if loan_repayment_schedule:
