@@ -175,8 +175,9 @@ class Loan(AccountsController):
 			reverse_loan_interest_accruals(self.name, self.freeze_date)
 			update_days_past_due_in_loans(posting_date=self.get("freeze_date"), loan_name=self.name)
 			process_loan_interest_accrual_for_loans(posting_date=self.get("freeze_date"), loan=self.name)
-		else:
-			self.freeze_date = None
+		elif self.has_value_changed("freeze_account") and not self.freeze_account:
+			self.db_set("freeze_date", None)
+			process_loan_interest_accrual_for_loans(posting_date=nowdate(), loan=self.name)
 			create_loan_feeze_log(self.name, None, self.get("freeze_reason"), unfreeze_date=nowdate())
 
 		if self.has_value_changed("maximum_limit_amount"):
@@ -433,7 +434,17 @@ def request_loan_closure(loan, posting_date=None, auto_close=0):
 		status = "Loan Closure Requested"
 		response = "Loan Closure Requested Successfully"
 
-	frappe.db.set_value("Loan", loan, "status", status)
+	values = {
+		"status": status,
+	}
+	if status == "Closed":
+		schedule = frappe.db.get_value(
+			"Loan Repayment Schedule", {"loan": loan, "status": "Active", "docstatus": 1}
+		)
+		frappe.db.set_value("Loan Repayment Schedule", schedule, "status", "Closed")
+		values["closure_date"] = posting_date
+
+	frappe.db.set_value("Loan", loan, values)
 
 	return {
 		"message": response,
@@ -697,7 +708,7 @@ def update_days_past_due_in_loans(
 	ignore_freeze=False,
 	is_backdated=0,
 	via_background_job=False,
-	force_update_dpd_in_loan=False,
+	force_update_dpd_in_loan=0,
 ):
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import get_unpaid_demands
 
@@ -714,7 +725,7 @@ def update_days_past_due_in_loans(
 	)
 
 	for disbursement in disbursements:
-		if posting_date == add_days(getdate(), -1):
+		if posting_date == add_days(getdate(), -1) or force_update_dpd_in_loan:
 			demand = get_unpaid_demands(
 				loan_name,
 				posting_date=posting_date,
@@ -732,7 +743,12 @@ def update_days_past_due_in_loans(
 			)
 
 			dpd_date = posting_date
-			days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
+
+			if posting_date == add_days(getdate(), -1):
+				days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
+			else:
+				days_past_due = date_diff(getdate(dpd_date), getdate(demand_date))
+
 			if days_past_due < 0:
 				days_past_due = 0
 

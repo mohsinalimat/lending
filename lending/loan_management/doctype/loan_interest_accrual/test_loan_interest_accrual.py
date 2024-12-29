@@ -28,7 +28,6 @@ from lending.loan_management.doctype.process_loan_classification.process_loan_cl
 )
 from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_interest_accrual import (
 	process_loan_interest_accrual_for_loans,
-	process_loan_interest_accrual_for_term_loans,
 )
 
 
@@ -127,7 +126,7 @@ class TestLoanInterestAccrual(unittest.TestCase):
 		loan.submit()
 
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date="2023-02-01")
-		process_loan_interest_accrual_for_term_loans(posting_date="2023-02-01")
+		process_loan_interest_accrual_for_loans(posting_date="2023-02-01")
 		create_process_loan_classification(
 			posting_date="2023-02-02", loan_product=loan.loan_product, loan=loan.name
 		)

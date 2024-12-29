@@ -39,7 +39,12 @@ class LoanDemand(AccountsController):
 
 		self.update_repayment_schedule()
 
-		if self.is_term_loan and self.demand_type == "EMI" and self.demand_subtype == "Interest":
+		if (
+			not frappe.flags.on_repost
+			and self.is_term_loan
+			and self.demand_type == "EMI"
+			and self.demand_subtype == "Interest"
+		):
 			process_loan_interest_accrual_for_loans(
 				posting_date=add_days(self.demand_date, -1), loan=self.loan
 			)
@@ -327,7 +332,20 @@ def create_loan_demand(
 		demand.submit()
 
 
-def reverse_demands(loan, posting_date, demand_type=None, loan_repayment_schedule=None):
+def reverse_demands(
+	loan,
+	posting_date,
+	demand_type=None,
+	loan_repayment_schedule=None,
+	loan_disbursement=None,
+	on_settlement_or_closure=False,
+):
+
+	# on settlement or closure, demand should be cleared from next day
+	# as other demands also get passed on the same day
+	if on_settlement_or_closure:
+		posting_date = add_days(posting_date, 1)
+
 	filters = {"loan": loan, "demand_date": (">=", posting_date), "docstatus": 1}
 
 	if demand_type:
@@ -338,6 +356,9 @@ def reverse_demands(loan, posting_date, demand_type=None, loan_repayment_schedul
 
 	if loan_repayment_schedule:
 		filters["loan_repayment_schedule"] = loan_repayment_schedule
+
+	if loan_disbursement:
+		filters["loan_disbursement"] = loan_disbursement
 
 	for demand in frappe.get_all("Loan Demand", filters=filters):
 		doc = frappe.get_doc("Loan Demand", demand.name)

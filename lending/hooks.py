@@ -144,6 +144,10 @@ accounting_dimension_doctypes = [
 	"Journal Entry",
 ]
 
+repost_allowed_doctypes = [
+	"Loan Repayment",
+	"Loan Disbursement",
+]
 # Scheduled Tasks
 # ---------------
 

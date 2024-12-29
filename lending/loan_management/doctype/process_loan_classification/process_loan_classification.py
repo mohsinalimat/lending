@@ -33,7 +33,7 @@ class ProcessLoanClassification(Document):
 				self.name,
 				self.payment_reference,
 				self.is_backdated,
-				self.force_update_dpd_in_loan
+				self.force_update_dpd_in_loan,
 			)
 		else:
 			BATCH_SIZE = 5000
@@ -76,7 +76,7 @@ def process_loan_classification_batch(
 				ignore_freeze=True if payment_reference else False,
 				is_backdated=is_backdated,
 				via_background_job=via_scheduler,
-				force_update_dpd_in_loan=force_update_dpd_in_loan
+				force_update_dpd_in_loan=force_update_dpd_in_loan,
 			)
 
 			if len(open_loans) > 1:
@@ -100,7 +100,12 @@ def get_batches(open_loans, batch_size):
 
 
 def create_process_loan_classification(
-	posting_date=None, loan_product=None, loan=None, payment_reference=None, is_backdated=0
+	posting_date=None,
+	loan_product=None,
+	loan=None,
+	payment_reference=None,
+	is_backdated=0,
+	force_update_dpd_in_loan=0,
 ):
 	posting_date = posting_date or add_days(getdate(), -1)
 	process_loan_classification = frappe.new_doc("Process Loan Classification")
@@ -109,4 +114,5 @@ def create_process_loan_classification(
 	process_loan_classification.loan = loan
 	process_loan_classification.payment_reference = payment_reference
 	process_loan_classification.is_backdated = is_backdated
+	process_loan_classification.force_update_dpd_in_loan = force_update_dpd_in_loan
 	process_loan_classification.submit()

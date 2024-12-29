@@ -337,7 +337,7 @@ def get_overlapping_dates(loan, last_accrual_date, posting_date, loan_disburseme
 
 	schedules = [d.name for d in schedules_details]
 
-	freeze_date = frappe.db.get_value("Loan", loan, "freeze_date", cache=True)
+	freeze_date = frappe.db.get_value("Loan", loan, "freeze_date")
 	if freeze_date and getdate(freeze_date) < getdate(posting_date):
 		posting_date = freeze_date
 
@@ -688,7 +688,7 @@ def get_last_accrual_date(
 		filters["posting_date"] = ("<=", posting_date)
 
 	last_interest_accrual_date = frappe.db.get_value(
-		"Loan Interest Accrual", filters, "MAX(posting_date)"
+		"Loan Interest Accrual", filters, "MAX(posting_date)", for_update=True
 	)
 
 	if loan_repayment_schedule:
@@ -830,6 +830,7 @@ def reverse_loan_interest_accruals(
 	loan_repayment_schedule=None,
 	is_npa=0,
 	on_payment_allocation=False,
+	loan_disbursement=None,
 ):
 	from lending.loan_management.doctype.loan_write_off.loan_write_off import (
 		write_off_suspense_entries,
@@ -849,6 +850,9 @@ def reverse_loan_interest_accruals(
 
 	if loan_repayment_schedule:
 		filters["loan_repayment_schedule"] = loan_repayment_schedule
+
+	if loan_disbursement:
+		filters["loan_disbursement"] = loan_disbursement
 
 	accruals = (
 		frappe.get_all("Loan Interest Accrual", filters=filters, fields=["name", "posting_date"]) or []

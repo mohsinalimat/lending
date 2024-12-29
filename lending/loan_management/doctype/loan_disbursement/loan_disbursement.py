@@ -142,7 +142,7 @@ class LoanDisbursement(AccountsController):
 				gle_map,
 				broken_period_interest_account,
 				self.disbursement_account,
-				self.bpi_amount_difference,
+				-1 * self.bpi_amount_difference,
 				_("BPI difference entry"),
 				bpi_difference_date=self.bpi_difference_date,
 			)

@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import add_days, cint, flt
+from frappe.utils import cint, flt, getdate
 
 from lending.loan_management.doctype.loan_repayment.loan_repayment import (
 	calculate_amounts,
@@ -27,28 +27,30 @@ class LoanRepaymentRepost(Document):
 			filters["loan_disbursement"] = self.loan_disbursement
 
 		entries = frappe.get_all(
-			"Loan Repayment", filters, pluck="name", order_by="posting_date desc, creation desc"
+			"Loan Repayment", filters, ["name", "posting_date"], order_by="posting_date desc, creation desc"
 		)
 		for entry in entries:
-			self.append("repayment_entries", {"loan_repayment": entry})
+			self.append(
+				"repayment_entries",
+				{
+					"loan_repayment": entry.name,
+					"posting_date": entry.posting_date,
+				},
+			)
 
 	def on_submit(self):
 		if self.clear_demand_allocation_before_repost:
 			self.clear_demand_allocation()
 
 		self.trigger_on_cancel_events()
-		self.process_loan_demand()
+		self.cancel_demands()
 		self.trigger_on_submit_events()
 
-	def process_loan_demand(self):
-		repayments = [d.loan_repayment for d in self.get("repayment_entries")]
-		max_demand_date = frappe.db.get_value(
-			"Loan Repayment", {"against_loan": self.loan, "name": ("in", repayments)}, "max(posting_date)"
-		)
+	def cancel_demands(self):
+		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
 
-		frappe.get_doc(
-			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": max_demand_date}
-		).submit()
+		if self.cancel_future_emi_demands:
+			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
 
 	def clear_demand_allocation(self):
 		demands = frappe.get_all(
@@ -61,6 +63,7 @@ class LoanRepaymentRepost(Document):
 			},
 			["name", "demand_amount"],
 		)
+
 		for demand in demands:
 			frappe.db.set_value(
 				"Loan Demand",
@@ -70,6 +73,12 @@ class LoanRepaymentRepost(Document):
 					"outstanding_amount": demand.demand_amount,
 				},
 			)
+
+		for entry in self.get("repayment_entries"):
+			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
+			for repayment_detail in repayment_doc.get("repayment_details"):
+				if repayment_detail.demand_type == "EMI":
+					frappe.delete_doc("Loan Repayment Detail", repayment_detail.name, force=1)
 
 	def trigger_on_cancel_events(self):
 		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
@@ -83,14 +92,6 @@ class LoanRepaymentRepost(Document):
 			else:
 				repayment_doc.docstatus = 2
 
-				if self.clear_demand_allocation_before_repost:
-					for repayment_detail in repayment_doc.get("repayment_details"):
-						if repayment_detail.demand_type == "EMI":
-							frappe.delete_doc("Loan Repayment Detail", repayment_detail.name, force=1)
-
-				if not self.ignore_on_cancel_amount_update:
-					repayment_doc.mark_as_unpaid()
-
 				repayment_doc.update_demands(cancel=1)
 				repayment_doc.update_limits(cancel=1)
 				repayment_doc.update_security_deposit_amount(cancel=1)
@@ -98,17 +99,48 @@ class LoanRepaymentRepost(Document):
 				if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
 					repayment_doc.cancel_loan_restructure()
 
-				# Delete GL Entries
-				frappe.db.sql(
-					"DELETE FROM `tabGL Entry` WHERE voucher_type='Loan Repayment' AND voucher_no=%s",
-					repayment_doc.name,
+				if self.delete_gl_entries:
+					frappe.db.sql(
+						"DELETE FROM `tabGL Entry` WHERE voucher_type='Loan Repayment' AND voucher_no=%s",
+						repayment_doc.name,
+					)
+				else:
+					# cancel GL Entries
+					repayment_doc.make_gl_entries(cancel=1)
+
+			filters = {"against_loan": self.loan, "docstatus": 1, "posting_date": ("<", self.repost_date)}
+
+			if self.loan_disbursement:
+				filters["loan_disbursement"] = self.loan_disbursement
+
+			totals = frappe.db.get_value(
+				"Loan Repayment",
+				filters,
+				[
+					"SUM(principal_amount_paid) as total_principal_paid",
+					"SUM(amount_paid) as total_amount_paid",
+				],
+				as_dict=1,
+			)
+
+			frappe.db.set_value(
+				"Loan",
+				self.loan,
+				{
+					"total_principal_paid": flt(totals.total_principal_paid),
+					"total_amount_paid": flt(totals.total_amount_paid),
+				},
+			)
+
+			if self.loan_disbursement:
+				frappe.db.set_value(
+					"Loan Disbursement",
+					self.loan_disbursement,
+					"principal_amount_paid",
+					flt(totals.total_principal_paid),
 				)
 
 	def trigger_on_submit_events(self):
-		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
-		from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
-			reverse_loan_interest_accruals,
-		)
 		from lending.loan_management.doctype.loan_repayment.loan_repayment import (
 			update_installment_counts,
 		)
@@ -119,23 +151,26 @@ class LoanRepaymentRepost(Document):
 		entries_to_cancel = [d.loan_repayment for d in self.get("entries_to_cancel")]
 
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
+
 		for entry in reversed(self.get("repayment_entries", [])):
 			if entry.loan_repayment in entries_to_cancel:
 				continue
 
+			frappe.flags.on_repost = True
+
+			frappe.get_doc(
+				{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": entry.posting_date}
+			).submit()
+
 			repayment_doc = frappe.get_doc("Loan Repayment", entry.loan_repayment)
+			repayment_doc.flags.from_repost = True
+
 			for entry in repayment_doc.get("repayment_details"):
 				frappe.delete_doc("Loan Repayment Detail", entry.name, force=1)
 
 			repayment_doc.docstatus = 1
 			repayment_doc.set("pending_principal_amount", 0)
 			repayment_doc.set("excess_amount", 0)
-
-			if not self.ignore_repayment_type_update and repayment_doc.repayment_type in (
-				"Advance Payment",
-				"Pre Payment",
-			):
-				repayment_doc.set("repayment_type", "Normal Repayment")
 
 			charges = []
 			if self.get("payable_charges"):
@@ -158,22 +193,9 @@ class LoanRepaymentRepost(Document):
 			)
 
 			repayment_doc.set("pending_principal_amount", flt(pending_principal_amount, precision))
-			repayment_doc.before_validate()
+			repayment_doc.run_method("before_validate")
 
 			repayment_doc.allocate_amount_against_demands(amounts)
-
-			# Run on_submit events
-			repayment_doc.update_paid_amounts()
-			repayment_doc.update_demands()
-			repayment_doc.update_limits()
-			repayment_doc.update_security_deposit_amount()
-
-			# if repayment_doc.repayment_type not in ("Advance Payment", "Pre Payment"):
-			# 	repayment_doc.book_interest_accrued_not_demanded()
-			# 	repayment_doc.book_pending_principal()
-
-			repayment_doc.db_update_all()
-			repayment_doc.make_gl_entries()
 
 			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
 				create_update_loan_reschedule(
@@ -185,17 +207,22 @@ class LoanRepaymentRepost(Document):
 					loan_disbursement=repayment_doc.loan_disbursement,
 				)
 
+				repayment_doc.reverse_future_accruals_and_demands()
 				repayment_doc.process_reschedule()
+
+			# Run on_submit events
+			repayment_doc.update_paid_amounts()
+			repayment_doc.update_demands()
+			repayment_doc.update_limits()
+			repayment_doc.update_security_deposit_amount()
+			repayment_doc.db_update_all()
+			repayment_doc.make_gl_entries()
 
 			update_installment_counts(self.loan)
 
-		if self.cancel_future_penal_accruals_and_demands:
-			reverse_loan_interest_accruals(
-				self.loan,
-				self.repost_date,
-				interest_type="Penal Interest",
-				is_npa=0,
-				on_payment_allocation=False,
-			)
+			repayment_doc.flags.from_repost = False
+			frappe.flags.on_repost = False
 
-			reverse_demands(self.loan, add_days(self.repost_date, 1), demand_type="Penalty")
+		frappe.get_doc(
+			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": getdate()}
+		).submit()
