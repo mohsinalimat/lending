@@ -93,6 +93,7 @@ class LoanRepayment(AccountsController):
 			process_loan_interest_accrual_for_loans,
 		)
 
+		reversed_accruals = []
 		make_sales_invoice_for_charge(
 			self.against_loan,
 			"loan_repayment",
@@ -103,7 +104,7 @@ class LoanRepayment(AccountsController):
 		)
 
 		if self.repayment_type in ("Advance Payment", "Pre Payment"):
-			self.reverse_future_accruals_and_demands()
+			reversed_accruals += self.reverse_future_accruals_and_demands()
 
 		if not self.principal_amount_paid >= self.pending_principal_amount:
 			if self.is_term_loan and self.repayment_type in ("Advance Payment", "Pre Payment"):
@@ -151,7 +152,7 @@ class LoanRepayment(AccountsController):
 
 		if self.is_term_loan:
 			max_date = None
-			accruals = reverse_loan_interest_accruals(
+			reversed_accruals += reverse_loan_interest_accruals(
 				self.against_loan,
 				self.posting_date,
 				interest_type="Penal Interest",
@@ -160,7 +161,7 @@ class LoanRepayment(AccountsController):
 			)
 
 			if self.repayment_type in ("Full Settlement", "Write Off Settlement"):
-				accruals += reverse_loan_interest_accruals(
+				reversed_accruals += reverse_loan_interest_accruals(
 					self.against_loan,
 					self.posting_date,
 					interest_type="Normal Interest",
@@ -170,7 +171,7 @@ class LoanRepayment(AccountsController):
 
 			reverse_demands(self.against_loan, add_days(self.posting_date, 1), demand_type="Penalty")
 
-			if accruals:
+			if reversed_accruals:
 				create_process_loan_classification(
 					posting_date=self.posting_date,
 					loan_product=self.loan_product,
@@ -190,10 +191,10 @@ class LoanRepayment(AccountsController):
 					enqueue_after_commit=True,
 				)
 
-			if accruals:
-				dates = [getdate(d.get("posting_date")) for d in accruals]
+			if reversed_accruals:
+				dates = [getdate(d.get("posting_date")) for d in reversed_accruals]
 				max_date = max(dates)
-
+				print(max_date, "#########")
 				if getdate(max_date) > getdate(self.posting_date):
 					process_loan_interest_accrual_for_loans(
 						posting_date=max_date, loan=self.against_loan, loan_product=self.loan_product
@@ -330,7 +331,7 @@ class LoanRepayment(AccountsController):
 			reverse_loan_interest_accruals,
 		)
 
-		reverse_loan_interest_accruals(
+		accruals = reverse_loan_interest_accruals(
 			self.against_loan,
 			self.posting_date,
 			interest_type="Normal Interest",
@@ -346,6 +347,8 @@ class LoanRepayment(AccountsController):
 			loan_disbursement=self.loan_disbursement,
 			on_settlement_or_closure=on_settlement_or_closure,
 		)
+
+		return accruals
 
 	def set_repayment_account(self):
 		if not self.payment_account and self.mode_of_payment:
