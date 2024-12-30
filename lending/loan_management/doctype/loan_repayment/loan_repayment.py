@@ -63,7 +63,7 @@ class LoanRepayment(AccountsController):
 			if self.is_npa or self.manual_npa:
 				# Mark back all loans as NPA
 				update_all_linked_loan_customer_npa_status(
-					self.is_npa, self.manual_npa, self.applicant_type, self.applicant
+					self.is_npa, self.manual_npa, self.applicant_type, self.applicant, self.posting_date
 				)
 
 			frappe.db.set_value("Loan", self.against_loan, "days_past_due", self.days_past_due)
