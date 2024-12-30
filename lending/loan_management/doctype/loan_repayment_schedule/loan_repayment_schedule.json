@@ -187,7 +187,7 @@
    "fieldname": "repayment_frequency",
    "fieldtype": "Select",
    "label": "Repayment Frequency",
-   "options": "Monthly\nDaily\nWeekly\nQuarterly\nOne Time"
+   "options": "Monthly\nDaily\nWeekly\nBi-Weekly\nQuarterly\nOne Time"
   },
   {
    "depends_on": "eval:doc.moratorium_tenure > 0",

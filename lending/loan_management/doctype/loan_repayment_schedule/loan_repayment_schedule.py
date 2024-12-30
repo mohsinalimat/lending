@@ -417,6 +417,8 @@ class LoanRepaymentSchedule(Document):
 		) and self.repayment_frequency == "Monthly":
 			next_payment_date = add_single_month(payment_date)
 			payment_date = next_payment_date
+		elif self.repayment_frequency == "Bi-Weekly":
+			payment_date = add_days(payment_date, 14)
 		elif self.repayment_frequency == "Weekly":
 			payment_date = add_days(payment_date, 7)
 		elif self.repayment_frequency == "Daily":
@@ -782,6 +784,8 @@ class LoanRepaymentSchedule(Document):
 		else:
 			if payment_date == self.repayment_start_date:
 				days = date_diff(payment_date, self.posting_date)
+			elif self.repayment_frequency == "Bi-Weekly":
+				days = 14
 			elif self.repayment_frequency == "Weekly":
 				days = 7
 			elif self.repayment_frequency == "Daily":
