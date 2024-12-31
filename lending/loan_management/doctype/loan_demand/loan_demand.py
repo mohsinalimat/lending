@@ -184,7 +184,11 @@ def make_loan_demand_for_term_loans(
 		"docstatus": 1,
 		"status": ("in", ("Disbursed", "Partially Disbursed", "Active")),
 		"is_term_loan": 1,
+	}
+
+	or_filters = {
 		"excess_amount_paid": ("<=", 0),
+		"repayment_schedule_type": "Line of Credit",
 	}
 
 	if loan_product:
@@ -193,7 +197,7 @@ def make_loan_demand_for_term_loans(
 	if loan:
 		filters["name"] = loan
 
-	open_loans = frappe.db.get_all("Loan", filters=filters, pluck="name")
+	open_loans = frappe.db.get_all("Loan", filters=filters, or_filters=or_filters, pluck="name")
 
 	freeze_dates = get_freeze_date_map(open_loans)
 
