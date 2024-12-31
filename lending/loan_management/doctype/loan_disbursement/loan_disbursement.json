@@ -46,6 +46,7 @@
   "disbursement_references_section",
   "reference_date",
   "days_past_due",
+  "status",
   "column_break_17",
   "reference_number",
   "amended_from"
@@ -343,12 +344,22 @@
    "fieldtype": "Currency",
    "label": "Principal Amount Paid",
    "options": "Company:company:default_currency"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "\nDraft\nSubmitted\nCancelled\nClosed",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-12 16:56:42.962589",
+ "modified": "2024-12-31 15:56:14.127955",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Disbursement",
