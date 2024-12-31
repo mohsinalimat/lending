@@ -129,6 +129,7 @@ class LoanRepaymentRepost(Document):
 				{
 					"total_principal_paid": flt(totals.total_principal_paid),
 					"total_amount_paid": flt(totals.total_amount_paid),
+					"excess_amount_paid": 0,
 				},
 			)
 
