@@ -150,7 +150,11 @@ class LoanRepayment(AccountsController):
 		self.create_loan_limit_change_log()
 		self.make_gl_entries()
 
-		if self.is_term_loan:
+		if self.is_term_loan and self.repayment_type not in (
+			"Interest Waiver",
+			"Penalty Waiver",
+			"Charges Waiver",
+		):
 			max_date = None
 			reversed_accruals += reverse_loan_interest_accruals(
 				self.against_loan,
@@ -194,7 +198,6 @@ class LoanRepayment(AccountsController):
 			if reversed_accruals:
 				dates = [getdate(d.get("posting_date")) for d in reversed_accruals]
 				max_date = max(dates)
-				print(max_date, "#########")
 				if getdate(max_date) > getdate(self.posting_date):
 					process_loan_interest_accrual_for_loans(
 						posting_date=max_date, loan=self.against_loan, loan_product=self.loan_product
