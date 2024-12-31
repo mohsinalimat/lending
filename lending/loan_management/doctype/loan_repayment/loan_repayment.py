@@ -837,13 +837,14 @@ class LoanRepayment(AccountsController):
 
 		if self.loan_disbursement:
 			filters["loan_disbursement"] = self.loan_disbursement
+			if cancel:
+				frappe.db.set_value("Loan Disbursement", self.loan_disbursement, "status", "Submitted")
+			if status == "Closed":
+				frappe.db.set_value("Loan Disbursement", self.loan_disbursement, "status", status)
 
 		repayment_schedule = frappe.get_value("Loan Repayment Schedule", filters, "name")
 		if repayment_schedule:
 			frappe.db.set_value("Loan Repayment Schedule", repayment_schedule, "status", status)
-
-		if self.loan_disbursement and status == "Closed":
-			frappe.db.set_value("Loan Disbursement", self.loan_disbursement, "status", status)
 
 	def auto_close_loan(self):
 		auto_close = False
