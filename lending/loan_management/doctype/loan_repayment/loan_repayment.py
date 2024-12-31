@@ -842,6 +842,9 @@ class LoanRepayment(AccountsController):
 		if repayment_schedule:
 			frappe.db.set_value("Loan Repayment Schedule", repayment_schedule, "status", status)
 
+		if self.loan_disbursement and status == "Closed":
+			frappe.db.set_value("Loan Disbursement", self.loan_disbursement, "status", status)
+
 	def auto_close_loan(self):
 		auto_close = False
 

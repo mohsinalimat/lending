@@ -1,12 +1,12 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.listview_settings['Loan Repayment Schedule'] = {
+frappe.listview_settings['Loan Disbursement'] = {
 	get_indicator: function(doc) {
-		let status_color = {
+		var status_color = {
 			"Draft": "red",
-			"Active": "green",
-			"Restructured": "orange",
+			"Submitted": "blue",
+			"Cancelled": "red",
 			"Closed": "green"
 		};
 		return [__(doc.status), status_color[doc.status], "status,=,"+doc.status];

@@ -42,6 +42,7 @@ from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_
 
 class LoanDisbursement(AccountsController):
 	def validate(self):
+		self.set_status()
 		self.set_missing_values()
 		self.validate_disbursal_amount()
 		if self.repayment_schedule_type == "Line of Credit":
@@ -126,6 +127,14 @@ class LoanDisbursement(AccountsController):
 		self.create_loan_limit_change_log()
 		self.withheld_security_deposit()
 		self.make_gl_entries()
+
+	def set_status(self):
+		if self.docstatus == 0:
+			self.status = "Draft"
+		elif self.docstatus == 1:
+			self.db_set("status", "Submitted")
+		elif self.docstatus == 2:
+			self.db_set("status", "Cancelled")
 
 	def add_bpi_difference_entry(self, gle_map):
 		if flt(self.bpi_amount_difference) > 0:
@@ -247,6 +256,7 @@ class LoanDisbursement(AccountsController):
 
 		self.make_gl_entries(cancel=1)
 		self.ignore_linked_doctypes = ["GL Entry", "Payment Ledger Entry"]
+		self.set_status()
 
 	def set_missing_values(self):
 		if not self.disbursement_date:
