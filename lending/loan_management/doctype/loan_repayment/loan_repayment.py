@@ -840,6 +840,10 @@ class LoanRepayment(AccountsController):
 
 		if self.loan_disbursement:
 			filters["loan_disbursement"] = self.loan_disbursement
+			if cancel:
+				frappe.db.set_value("Loan Disbursement", self.loan_disbursement, "status", "Submitted")
+			if status == "Closed":
+				frappe.db.set_value("Loan Disbursement", self.loan_disbursement, "status", status)
 
 		repayment_schedule = frappe.get_value("Loan Repayment Schedule", filters, "name")
 		if repayment_schedule:
@@ -920,6 +924,9 @@ class LoanRepayment(AccountsController):
 				else:
 					query = query.set(loan.status, "Disbursed")
 					self.update_repayment_schedule_status(cancel=1)
+
+			if self.repayment_schedule_type == "Line of Credit" and self.loan_disbursement:
+				self.update_repayment_schedule_status(cancel=1)
 
 			if flt(self.excess_amount) > 0:
 				query = query.set(loan.excess_amount_paid, loan.excess_amount_paid - self.excess_amount)
