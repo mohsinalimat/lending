@@ -36,3 +36,4 @@ lending.patches.v15_0.update_loan_product_accounts
 lending.patches.v15_0.create_accounting_dimensions_for_loan_doctypes
 lending.patches.v15_0.update_maturity_date
 lending.patches.v15_0.loan_repayment_schedule_status_patch
+lending.patches.v15_0.loan_disbursement_status_patch
