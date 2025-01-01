@@ -1,25 +1,35 @@
 import frappe
 
-loan_dis = frappe.db.get_all(
-	"Loan Disbursement",
-	filters={"status": ["!=", "Closed"]},
-	fields=["name", "docstatus"],
+frappe.db.sql(
+	"""
+	UPDATE `tabLoan Disbursement`
+	SET status = 'Draft'
+	WHERE docstatus = 0
+"""
 )
-for ld in loan_dis:
-	if ld.docstatus == 0:
-		frappe.db.set_value("Loan Disbursement", ld.name, "status", "Draft", update_modified=False)
-	elif ld.docstatus == 1:
-		frappe.db.set_value("Loan Disbursement", ld.name, "status", "Submitted", update_modified=False)
-	elif ld.docstatus == 2:
-		frappe.db.set_value("Loan Disbursement", ld.name, "status", "Cancelled", update_modified=False)
 
-loan_repay_sche = frappe.db.get_all(
-	"Loan Repayment Schedule",
-	filters={"status": "Closed"},
-	fields=["loan_disbursement"],
+frappe.db.sql(
+	"""
+	UPDATE `tabLoan Disbursement`
+	SET status = 'Submitted'
+	WHERE docstatus = 1
+"""
 )
-for lrs in loan_repay_sche:
-	if lrs.loan_disbursement:
-		frappe.db.set_value(
-			"Loan Disbursement", lrs.loan_disbursement, "status", "Closed", update_modified=False
-		)
+
+frappe.db.sql(
+	"""
+	UPDATE `tabLoan Disbursement`
+	SET status = 'Cancelled'
+	WHERE docstatus = 2
+"""
+)
+
+frappe.db.sql(
+	"""
+	UPDATE `tabLoan Disbursement` ld
+	INNER JOIN `tabLoan Repayment Schedule` lrs
+	ON ld.name = lrs.loan_disbursement
+	SET ld.status = 'Closed'
+	WHERE lrs.status = 'Closed'
+"""
+)
