@@ -251,7 +251,7 @@
    "fieldname": "repayment_frequency",
    "fieldtype": "Select",
    "label": "Repayment Frequency",
-   "options": "Monthly\nDaily\nWeekly\nQuarterly\nOne Time"
+   "options": "Monthly\nDaily\nWeekly\nBi-Weekly\nQuarterly\nOne Time"
   },
   {
    "fetch_from": "against_loan.repayment_schedule_type",
@@ -348,7 +348,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-12 16:56:42.962589",
+ "modified": "2024-12-31 22:51:42.962589",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Disbursement",
