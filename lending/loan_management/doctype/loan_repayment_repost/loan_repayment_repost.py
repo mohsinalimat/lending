@@ -129,6 +129,7 @@ class LoanRepaymentRepost(Document):
 				{
 					"total_principal_paid": flt(totals.total_principal_paid),
 					"total_amount_paid": flt(totals.total_amount_paid),
+					"excess_amount_paid": 0,
 				},
 			)
 
@@ -197,7 +198,9 @@ class LoanRepaymentRepost(Document):
 
 			repayment_doc.allocate_amount_against_demands(amounts)
 
-			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
+			if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment") and (
+				not repayment_doc.principal_amount_paid >= repayment_doc.pending_principal_amount
+			):
 				create_update_loan_reschedule(
 					repayment_doc.against_loan,
 					repayment_doc.posting_date,

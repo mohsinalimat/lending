@@ -117,7 +117,11 @@ class LoanRestructure(AccountsController):
 
 	def validate_repayment_start_date(self):
 		if getdate(self.repayment_start_date) < getdate(self.restructure_date):
-			frappe.throw(_("Restructure Date cannot be after Repayment Start Date"))
+			frappe.throw(
+				_("Restructure Date {0} cannot be after Repayment Start Date {1}").format(
+					self.restructure_date, self.repayment_start_date
+				)
+			)
 
 	def set_missing_values(self):
 		if not self.repayment_start_date:
