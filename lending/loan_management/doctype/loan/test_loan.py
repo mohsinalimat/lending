@@ -44,6 +44,8 @@ from lending.loan_management.doctype.process_loan_demand.process_loan_demand imp
 )
 from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_interest_accrual import (
 	process_loan_interest_accrual_for_loans,
+	schedule_accrual,
+	is_posting_date_accrual_day
 )
 from lending.loan_management.doctype.process_loan_security_shortfall.process_loan_security_shortfall import (
 	create_process_loan_security_shortfall,
@@ -1464,6 +1466,61 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
+	def test_accrual_background_job(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 2",
+			100000,
+			"Repay Over Number of Periods",
+			22,
+			repayment_start_date="2024-08-16",
+			posting_date="2024-08-16",
+			rate_of_interest=8.5,
+			applicant_type="Customer",
+		)
+		# Daily accrual
+		frappe.db.set_value(
+			"Company",
+			"_Test Company",
+			"loan_accrual_frequency",
+			"Daily",
+		)
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-12-12"))
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-01-01"))
+
+		# Weekly accrual
+		frappe.db.set_value(
+			"Company",
+			"_Test Company",
+			"loan_accrual_frequency",
+			"Weekly",
+		)
+		self.assertFalse(is_posting_date_accrual_day("_Test Company", "2024-05-01"))
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-05-06"))
+
+		# Fortnightly
+		frappe.db.set_value(
+			"Company",
+			"_Test Company",
+			"loan_accrual_frequency",
+			"Fortnightly",
+		)
+		self.assertFalse(is_posting_date_accrual_day("_Test Company", "2024-05-06"))
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-05-13"))
+		self.assertFalse(is_posting_date_accrual_day("_Test Company", "2024-05-20"))
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-05-27"))
+
+		# Monthly accrual
+		frappe.db.set_value(
+			"Company",
+			"_Test Company",
+			"loan_accrual_frequency",
+			"Monthly",
+		)
+		self.assertFalse(is_posting_date_accrual_day("_Test Company", "2024-12-02"))
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-05-01"))
+		self.assertFalse(is_posting_date_accrual_day("_Test Company", "2024-12-02"))
+		self.assertTrue(is_posting_date_accrual_day("_Test Company", "2024-12-01"))
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):
 	frappe.db.set_value(
