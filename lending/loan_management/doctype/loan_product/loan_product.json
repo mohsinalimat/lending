@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_rename": 1,
  "autoname": "field:product_code",
  "creation": "2019-08-29 18:08:38.159726",
  "doctype": "DocType",
@@ -450,7 +451,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-25 11:18:12.517166",
+ "modified": "2025-01-06 16:38:24.416251",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Product",
