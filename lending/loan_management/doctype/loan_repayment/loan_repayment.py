@@ -1549,6 +1549,10 @@ class LoanRepayment(AccountsController):
 				against_account = self.payment_account
 			else:
 				against_account = account_details.customer_refund_account
+				if not against_account:
+					frappe.throw(
+						_("Please set Customer Refund Account in Loan Product {0}").format(self.loan_product)
+					)
 
 			self.add_gl_entry(payment_account, against_account, self.excess_amount, gle_map)
 
