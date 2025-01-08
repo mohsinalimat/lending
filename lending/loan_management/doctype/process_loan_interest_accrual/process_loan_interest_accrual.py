@@ -27,21 +27,21 @@ def get_loan_accrual_frequency(company):
 	company_doc = frappe.qb.DocType("Company")
 	query = (
 		frappe.qb.from_(company_doc)
-		.select(company_doc.custom_loan_accrual_frequency)
+		.select(company_doc.loan_accrual_frequency)
 		.where(company_doc.name == company)
 	)
-	loan_accrual_frequency = query.run(as_dict=True)[0]['custom_loan_accrual_frequency']
+	loan_accrual_frequency = query.run(as_dict=True)[0]['loan_accrual_frequency']
 	return loan_accrual_frequency
 
 def is_posting_date_accrual_day(company, posting_date):
 	loan_accrual_frequency = get_loan_accrual_frequency(company)
 	day_of_the_month = frappe.utils.getdate(posting_date).day
-	weekday = frappe.utils.getdate(posting_date).weekday
+	weekday = frappe.utils.getdate(posting_date).weekday()
 	match loan_accrual_frequency:
 		case "Daily":
 			return True
 		case "Weekly":
-			if weekday == 2:
+			if weekday == 0:
 				return True
 		case "Fortnightly":
 			# More thinking required
@@ -49,7 +49,7 @@ def is_posting_date_accrual_day(company, posting_date):
 			# The logic for week_of_the_month assumes it's Monday, so should only be used
 			# in this specific circumstance
 			week_of_the_month = ((day_of_the_month - 1) // 7) % 2
-			if weekday == 2 and (week_of_the_month == 1 or week_of_the_month == 3):
+			if weekday == 0 and (week_of_the_month == 1 or week_of_the_month == 3):
 				return True
 			pass
 		case "Monthly":
