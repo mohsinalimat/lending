@@ -2347,7 +2347,7 @@ def get_accrued_interest(
 	filters = [
 		["loan", "=", loan],
 		["docstatus", "=", 1],
-		["posting_date", "<=", posting_date],
+		["posting_date", "<", posting_date],
 		["interest_type", "=", interest_type],
 	]
 
