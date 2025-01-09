@@ -982,7 +982,7 @@ def create_loan_accounts():
 		is_group=1,
 	)
 	create_account(
-		"Loan Account", "Loans and Advances (Assets) - _TC", "Asset", "Bank", "Balance Sheet"
+		"Loan Account", "Loans and Advances (Assets) - _TC", "Asset", "Receivable", "Balance Sheet"
 	)
 	create_account("Payment Account", "Bank Accounts - _TC", "Asset", "Bank", "Balance Sheet")
 	create_account("Disbursement Account", "Bank Accounts - _TC", "Asset", "Bank", "Balance Sheet")
