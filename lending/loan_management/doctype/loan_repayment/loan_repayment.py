@@ -568,6 +568,9 @@ class LoanRepayment(AccountsController):
 			self.total_charges_payable = amounts.get("total_charges_payable")
 
 	def validate_disbursement_link(self):
+		if self.repayment_schedule_type == "Line of Credit" and not self.loan_disbursement:
+			frappe.throw(_("Please select Loan Disbursement for Line of Credit repayment"))
+
 		if self.loan_disbursement:
 			disbursements = frappe.get_all(
 				"Loan Disbursement",
