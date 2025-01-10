@@ -1491,6 +1491,14 @@ class TestLoan(unittest.TestCase):
 		repayment_entry = create_repayment_entry(loan.name, "2024-10-09", 782)
 		repayment_entry.submit()
 
+		process_daily_loan_demands(posting_date="2024-11-05", loan=loan.name)
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-11-05", 3000)
+		repayment_entry.submit()
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-11-10", 782)
+		repayment_entry.submit()
+
 		dpd_logs = frappe.db.sql(
 			"""
 			SELECT posting_date, days_past_due
@@ -1507,27 +1515,31 @@ class TestLoan(unittest.TestCase):
 			"2024-10-06": 2,
 			"2024-10-07": 3,
 			"2024-10-08": 4,
-			"2024-10-09": 0,
+			"2024-10-09": 0,  # Fully repaid
+			"2024-10-10": 0,
+			"2024-11-04": 0,
+			"2024-11-05": 1,  # DPD starts again after repayment
+			"2024-11-06": 2,
+			"2024-11-07": 3,
+			"2024-11-08": 4,
+			"2024-11-09": 5,
+			"2024-11-10": 0,  # Fully repaid
 		}
 
 		repayment_date = datetime.strptime("2024-10-09", "%Y-%m-%d").date()
 
 		for log in dpd_logs:
-			posting_date = log.get("posting_date")
-			dpd_value = log.get("days_past_due")
+			posting_date = log["posting_date"]
+			dpd_value = log["days_past_due"]
 
-			if posting_date > repayment_date:
-				self.assertEqual(
-					dpd_value,
-					0,
-					f"Expected DPD for {posting_date} to be 0 after full repayment on 2024-10-09, but got {dpd_value}",
-				)
-			else:
-				self.assertEqual(
-					dpd_value,
-					expected_dpd_values.get(str(posting_date), 0),
-					f"Expected DPD for {posting_date} to be {expected_dpd_values.get(str(posting_date), 0)}, but got {dpd_value}",
-				)
+			posting_date_str = posting_date.strftime("%Y-%m-%d")
+
+			expected_dpd = expected_dpd_values.get(posting_date_str, 0)
+			self.assertEqual(
+				dpd_value,
+				expected_dpd,
+				f"DPD mismatch for {posting_date}: Expected {expected_dpd}, got {dpd_value}",
+			)
 
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):

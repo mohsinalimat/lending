@@ -900,15 +900,17 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 						demand.demand_amount -= paid_principal
 						payment.total_principal_paid -= paid_principal
 
+				dpd_counter = 0
 				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
-					if any(d.demand_amount > 0 for d in demands):
-						dpd = max(0, date_diff(payment_date, getdate(demand.demand_date)) + 1)
-						create_dpd_record(loan, loan_disbursement, payment_date, dpd)
+					if any(d.demand_date <= payment_date and d.demand_amount > 0 for d in demands):
+						dpd_counter += 1  # Increment the DPD for active demands
+						create_dpd_record(loan, loan_disbursement, payment_date, dpd_counter)
 					else:
+						dpd_counter = 0  # Reset DPD when no active demands
 						create_dpd_record(loan, loan_disbursement, payment_date, 0)
 
 				# Ensure DPD is 0 after the last payment date if no demands exist
-				if idx == len(payment_against_demand) - 1 and not any(d.demand_amount > 0 for d in demands):
+				if idx == len(payment_against_demand) - 1:
 					for payment_date in daterange(getdate(next_payment_date), getdate()):
 						create_dpd_record(loan, loan_disbursement, payment_date, 0)
 
