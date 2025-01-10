@@ -1464,6 +1464,71 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
+	def test_dpd_calulation(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 2",
+			100000,
+			"Repay Over Number of Periods",
+			30,
+			repayment_start_date="2024-10-05",
+			posting_date="2024-09-15",
+			rate_of_interest=10,
+			applicant_type="Customer",
+		)
+		loan.submit()
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-09-15", repayment_start_date="2024-10-05"
+		)
+		process_daily_loan_demands(posting_date="2024-10-05", loan=loan.name)
+
+		for date in ["2024-10-05", "2024-10-06", "2024-10-07", "2024-10-08", "2024-10-09", "2024-10-10"]:
+			create_process_loan_classification(posting_date=date, loan=loan.name)
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-10-05", 3000)
+		repayment_entry.submit()
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-10-09", 782)
+		repayment_entry.submit()
+
+		dpd_logs = frappe.db.sql(
+			"""
+			SELECT posting_date, days_past_due
+			FROM `tabDays Past Due Log`
+			WHERE loan = %s
+			ORDER BY posting_date
+			""",
+			(loan.name),
+			as_dict=1,
+		)
+
+		expected_dpd_values = {
+			"2024-10-05": 1,
+			"2024-10-06": 2,
+			"2024-10-07": 3,
+			"2024-10-08": 4,
+			"2024-10-09": 0,
+		}
+
+		repayment_date = datetime.strptime("2024-10-09", "%Y-%m-%d").date()
+
+		for log in dpd_logs:
+			posting_date = log.get("posting_date")
+			dpd_value = log.get("days_past_due")
+
+			if posting_date > repayment_date:
+				self.assertEqual(
+					dpd_value,
+					0,
+					f"Expected DPD for {posting_date} to be 0 after full repayment on 2024-10-09, but got {dpd_value}",
+				)
+			else:
+				self.assertEqual(
+					dpd_value,
+					expected_dpd_values.get(str(posting_date), 0),
+					f"Expected DPD for {posting_date} to be {expected_dpd_values.get(str(posting_date), 0)}, but got {dpd_value}",
+				)
+
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):
 	frappe.db.set_value(
