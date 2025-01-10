@@ -1549,7 +1549,7 @@ class LoanRepayment(AccountsController):
 
 		if flt(self.excess_amount, precision):
 			if self.auto_close_loan():
-				against_account = self.payment_account
+				against_account = account_details.interest_waiver_account
 			else:
 				against_account = account_details.customer_refund_account
 				if not against_account:
