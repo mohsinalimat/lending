@@ -194,9 +194,7 @@ def make_property_setter_for_journal_entry():
 			property_setter_doc.value += "\n" + "Loan Interest Accrual"
 			property_setter_doc.save()
 	else:
-		options = (
-			frappe.get_meta("Journal Entry Account").get_field("reference_type").options
-		)
+		options = frappe.get_meta("Journal Entry Account").get_field("reference_type").options
 		options += "\n" + "Loan Interest Accrual"
 
 		make_property_setter(
