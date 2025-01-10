@@ -18,7 +18,7 @@ LOAN_CUSTOM_FIELDS = {
 			"fieldname": "loan_tab",
 			"fieldtype": "Tab Break",
 			"label": "Loan",
-			"insert_after": "default_in_transit_warehouse",
+			"insert_after": "default_operating_cost_account",
 		},
 		{
 			"fieldname": "loan_settings",
@@ -194,7 +194,9 @@ def make_property_setter_for_journal_entry():
 			property_setter_doc.value += "\n" + "Loan Interest Accrual"
 			property_setter_doc.save()
 	else:
-		options = frappe.get_meta("Journal Entry Account").get_field("reference_type").options
+		options = (
+			frappe.get_meta("Journal Entry Account").get_field("reference_type").options
+		)
 		options += "\n" + "Loan Interest Accrual"
 
 		make_property_setter(
