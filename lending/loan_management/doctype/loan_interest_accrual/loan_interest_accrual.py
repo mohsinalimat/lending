@@ -78,14 +78,41 @@ class LoanInterestAccrual(AccountsController):
 		if self.interest_type == "Normal Interest":
 			receivable_account = account_details.interest_accrued_account
 			income_account = self.interest_income_account or account_details.interest_income_account
+
+			if not receivable_account:
+				frappe.throw(
+					_("Please set Interest Accrued Account in Loan Product {0}").format(self.loan_product)
+				)
+
+			if not income_account:
+				frappe.throw(
+					_("Please set Interest Income Account in Loan Product {0}").format(self.loan_product)
+				)
 		else:
 			receivable_account = account_details.penalty_accrued_account
 			income_account = account_details.penalty_income_account
+
+			if not receivable_account:
+				frappe.throw(
+					_("Please set Penalty Accrued Account in Loan Product {0}").format(self.loan_product)
+				)
+
+			if not income_account:
+				frappe.throw(
+					_("Please set Penalty Income Account in Loan Product {0}").format(self.loan_product)
+				)
 
 		if self.additional_interest_amount:
 			if not account_details.additional_interest_income:
 				frappe.throw(
 					_("Please set Additional Interest Income Account in Loan Product {0}").format(
+						self.loan_product
+					)
+				)
+
+			if not account_details.additional_interest_accrued:
+				frappe.throw(
+					_("Please set Additional Interest Accrued Account in Loan Product {0}").format(
 						self.loan_product
 					)
 				)
