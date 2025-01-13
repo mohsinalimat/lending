@@ -124,7 +124,7 @@ class LoanRepaymentSchedule(Document):
 		if payable_interest > 0:
 			make_loan_interest_accrual_entry(
 				self.loan,
-				self.current_principal_amount,
+				self.current_principal_amount - principal_balance,
 				flt(payable_interest, precision),
 				"",
 				last_accrual_date,
@@ -157,21 +157,36 @@ class LoanRepaymentSchedule(Document):
 			bpi_accrual_doc.cancel()
 
 		if cint(self.get("reverse_interest_accruals")):
-			frappe.enqueue(
-				reverse_loan_interest_accruals,
-				loan=self.loan,
-				posting_date=self.posting_date,
-				loan_repayment_schedule=self.name,
-				queue="long",
-			)
+			if not frappe.flags.in_test:
+				frappe.enqueue(
+					reverse_loan_interest_accruals,
+					loan=self.loan,
+					posting_date=self.posting_date,
+					loan_repayment_schedule=self.name,
+					queue="long",
+					enqueue_after_commit=True,
+				)
 
-			frappe.enqueue(
-				reverse_demands,
-				loan=self.loan,
-				posting_date=self.posting_date,
-				loan_repayment_schedule=self.name,
-				queue="long",
-			)
+				frappe.enqueue(
+					reverse_demands,
+					loan=self.loan,
+					posting_date=self.posting_date,
+					loan_repayment_schedule=self.name,
+					queue="long",
+					enqueue_after_commit=True,
+				)
+			else:
+				reverse_loan_interest_accruals(
+					loan=self.loan,
+					posting_date=self.posting_date,
+					loan_repayment_schedule=self.name,
+				)
+
+				reverse_demands(
+					loan=self.loan,
+					posting_date=self.posting_date,
+					loan_repayment_schedule=self.name,
+				)
 
 		self.ignore_linked_doctypes = ["Loan Interest Accrual", "Loan Demand"]
 
