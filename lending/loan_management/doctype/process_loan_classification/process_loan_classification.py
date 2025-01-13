@@ -2,11 +2,16 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, getdate
 
 
 class ProcessLoanClassification(Document):
+	def validate(self):
+		if getdate(self.posting_date) < getdate() and not self.loan:
+			frappe.throw(_("For backdated process loan classification, a Loan account is mandatory."))
+
 	def on_submit(self):
 		filters = {
 			"docstatus": 1,
