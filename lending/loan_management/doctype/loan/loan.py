@@ -736,7 +736,7 @@ def update_days_past_due_in_loans(
 				loan_disbursement=disbursement,
 			)
 		else:
-			get_oldest_outstanding_demand_date(
+			repost_days_past_due_log(
 				loan_name,
 				posting_date=posting_date,
 				loan_product=loan_product,
@@ -828,9 +828,8 @@ def daterange(start_date: date, end_date: date):
 		yield start_date + timedelta(n)
 
 
-def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_disbursement):
+def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement):
 	"""Get outstanding demands for a loan"""
-	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	where_conditions = ""
 	payment_conditions = ""
 
@@ -858,8 +857,6 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 	)
 
 	if demands:
-		prev_demand_date = demands[0].demand_date
-
 		if loan_product:
 			payment_conditions += f"AND loan_product = '{loan_product}'"
 
@@ -912,7 +909,8 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 				# Ensure DPD is 0 after the last payment date if no demands exist
 				if idx == len(payment_against_demand) - 1:
 					for payment_date in daterange(getdate(next_payment_date), getdate()):
-						create_dpd_record(loan, loan_disbursement, payment_date, 0)
+						if payment_date >= getdate(posting_date):
+							create_dpd_record(loan, loan_disbursement, payment_date, 0)
 
 
 def create_loan_write_off(loan, posting_date):
