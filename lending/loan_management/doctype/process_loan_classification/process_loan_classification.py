@@ -9,7 +9,7 @@ from frappe.utils import add_days, getdate
 
 class ProcessLoanClassification(Document):
 	def validate(self):
-		if getdate(self.posting_date) < getdate() and not self.loan:
+		if getdate(self.posting_date) < add_days(getdate(), -1) and not self.loan:
 			frappe.throw(_("For backdated process loan classification, a Loan account is mandatory."))
 
 	def on_submit(self):
