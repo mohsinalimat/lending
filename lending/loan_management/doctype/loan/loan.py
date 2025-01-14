@@ -901,10 +901,12 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
 					if any(d.demand_date <= payment_date and d.demand_amount > 0 for d in demands):
 						dpd_counter += 1  # Increment the DPD for active demands
-						create_dpd_record(loan, loan_disbursement, payment_date, dpd_counter)
+						if payment_date >= getdate(posting_date):
+							create_dpd_record(loan, loan_disbursement, payment_date, dpd_counter)
 					else:
 						dpd_counter = 0  # Reset DPD when no active demands
-						create_dpd_record(loan, loan_disbursement, payment_date, 0)
+						if payment_date >= getdate(posting_date):
+							create_dpd_record(loan, loan_disbursement, payment_date, 0)
 
 				# Ensure DPD is 0 after the last payment date if no demands exist
 				if idx == len(payment_against_demand) - 1:
