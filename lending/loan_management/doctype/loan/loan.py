@@ -3,6 +3,7 @@
 
 
 import json
+from datetime import date, timedelta
 
 import frappe
 from frappe import _
@@ -735,24 +736,13 @@ def update_days_past_due_in_loans(
 				loan_disbursement=disbursement,
 			)
 		else:
-			demand_date = get_oldest_outstanding_demand_date(
+			get_oldest_outstanding_demand_date(
 				loan_name,
 				posting_date=posting_date,
 				loan_product=loan_product,
 				loan_disbursement=disbursement,
 			)
 
-			dpd_date = posting_date
-
-			if posting_date == add_days(getdate(), -1):
-				days_past_due = date_diff(getdate(dpd_date), getdate(demand_date)) + 1
-			else:
-				days_past_due = date_diff(getdate(dpd_date), getdate(demand_date))
-
-			if days_past_due < 0:
-				days_past_due = 0
-
-			create_dpd_record(loan_name, disbursement, posting_date, days_past_due)
 			return
 
 		threshold_map = get_dpd_threshold_map()
@@ -832,6 +822,12 @@ def update_days_past_due_in_loans(
 			create_dpd_record(loan_name, disbursement, posting_date, 0, process_loan_classification)
 
 
+def daterange(start_date: date, end_date: date):
+	days = int((end_date - start_date).days)
+	for n in range(days):
+		yield start_date + timedelta(n)
+
+
 def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_disbursement):
 	"""Get outstanding demands for a loan"""
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
@@ -851,19 +847,18 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 		WHERE loan = %s
 			AND docstatus = 1
 			AND demand_type = "EMI"
-			AND demand_date <= %s
 			{0}
 		GROUP BY demand_date, demand_subtype
 		ORDER BY demand_date
 	""".format(
 			where_conditions
 		),
-		(loan, posting_date),
+		(loan),
 		as_dict=1,
 	)
 
 	if demands:
-		first_demand_date = demands[0].demand_date
+		prev_demand_date = demands[0].demand_date
 
 		if loan_product:
 			payment_conditions += f"AND loan_product = '{loan_product}'"
@@ -873,37 +868,51 @@ def get_oldest_outstanding_demand_date(loan, posting_date, loan_product, loan_di
 
 		payment_against_demand = frappe.db.sql(
 			"""
-			SELECT SUM(principal_amount_paid) as total_principal_paid, SUM(total_interest_paid) as total_interest_paid
+			SELECT posting_date, SUM(principal_amount_paid) as total_principal_paid, SUM(total_interest_paid) as total_interest_paid
 			FROM `tabLoan Repayment`
 			WHERE against_loan = %s
 				and docstatus = 1
-				and posting_date BETWEEN %s AND %s
+			GROUP BY posting_date
+			ORDER BY posting_date
 				{0}
 		""".format(
 				payment_conditions
 			),
-			(loan, first_demand_date, posting_date),
+			(loan),
 			as_dict=1,
 		)
 
-		paid_principal_amount = 0
-		paid_interest_amount = 0
-		if payment_against_demand:
-			paid_principal_amount = flt(payment_against_demand[0].total_principal_paid)
-			paid_interest_amount = flt(payment_against_demand[0].total_interest_paid)
+		for idx, payment in enumerate(payment_against_demand):
+			next_payment_date = (
+				payment_against_demand[idx + 1].posting_date
+				if idx + 1 < len(payment_against_demand)
+				else getdate()
+			)
+			for demand in demands:
+				if demand.demand_date <= getdate(payment.posting_date):
+					if demand.demand_subtype == "Interest" and payment.total_interest_paid > 0:
+						paid_interest = min(payment.total_interest_paid, demand.demand_amount)
+						demand.demand_amount -= paid_interest
+						payment.total_interest_paid -= paid_interest
 
-		for demand in demands:
-			if demand.demand_subtype == "Interest":
-				paid_interest_amount -= demand.demand_amount
-			elif demand.demand_subtype == "Principal":
-				paid_principal_amount -= demand.demand_amount
+					if demand.demand_subtype == "Principal" and payment.total_principal_paid > 0:
+						paid_principal = min(payment.total_principal_paid, demand.demand_amount)
+						demand.demand_amount -= paid_principal
+						payment.total_principal_paid -= paid_principal
 
-			if (
-				flt(paid_principal_amount, precision) < 0
-				or flt(paid_interest_amount, precision) < 0
-				or flt(demand.outstanding_amount, precision) > 0
-			):
-				return demand.demand_date
+				dpd_counter = 0
+				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
+					if any(d.demand_date <= payment_date and d.demand_amount > 0 for d in demands):
+						dpd_counter += 1  # Increment the DPD for active demands
+						create_dpd_record(loan, loan_disbursement, payment_date, dpd_counter)
+					else:
+						dpd_counter = 0  # Reset DPD when no active demands
+						create_dpd_record(loan, loan_disbursement, payment_date, 0)
+
+				# Ensure DPD is 0 after the last payment date if no demands exist
+				if idx == len(payment_against_demand) - 1:
+					for payment_date in daterange(getdate(next_payment_date), getdate()):
+						create_dpd_record(loan, loan_disbursement, payment_date, 0)
 
 
 def create_loan_write_off(loan, posting_date):
