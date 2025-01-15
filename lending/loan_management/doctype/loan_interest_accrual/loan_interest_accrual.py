@@ -435,6 +435,7 @@ def calculate_penal_interest_for_loans(
 		return
 
 	demands = get_unpaid_demands(loan.name, posting_date, emi_wise=True)
+
 	grace_period_days = cint(
 		frappe.get_value("Loan Product", loan_product, "grace_period_in_days", cache=True)
 	)
