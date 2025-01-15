@@ -3,11 +3,14 @@
 
 
 import frappe
-import erpnext
 from frappe.model.document import Document
 from frappe.utils import add_days, nowdate
 
+import erpnext
+
 from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
+	get_loan_accrual_frequency,
+	is_posting_date_accrual_day,
 	make_accrual_interest_entry_for_loans,
 )
 
@@ -23,47 +26,16 @@ class ProcessLoanInterestAccrual(Document):
 			accrual_date=self.posting_date,
 		)
 
-def get_loan_accrual_frequency(company):
-	company_doc = frappe.qb.DocType("Company")
-	query = (
-		frappe.qb.from_(company_doc)
-		.select(company_doc.loan_accrual_frequency)
-		.where(company_doc.name == company)
-	)
-	loan_accrual_frequency = query.run(as_dict=True)[0]['loan_accrual_frequency']
-	return loan_accrual_frequency
-
-def is_posting_date_accrual_day(company, posting_date):
-	loan_accrual_frequency = get_loan_accrual_frequency(company)
-	day_of_the_month = frappe.utils.getdate(posting_date).day
-	weekday = frappe.utils.getdate(posting_date).weekday()
-	match loan_accrual_frequency:
-		case "Daily":
-			return True
-		case "Weekly":
-			if weekday == 0:
-				return True
-		case "Fortnightly":
-			# More thinking required
-			# May or may not work
-			# The logic for week_of_the_month assumes it's Monday, so should only be used
-			# in this specific circumstance
-			week_of_the_month = ((day_of_the_month - 1) // 7) % 2
-			if weekday == 0 and (week_of_the_month == 1 or week_of_the_month == 3):
-				return True
-			pass
-		case "Monthly":
-			if day_of_the_month == 1:
-				return True
-	return False
-
-
 
 def schedule_accrual():
 	company = erpnext.get_default_company()
 	posting_date = add_days(nowdate(), -1)
-	if is_posting_date_accrual_day(company=company, post_date=posting_date):
+	loan_accrual_frequency = get_loan_accrual_frequency(company)
+	if is_posting_date_accrual_day(
+		loan_accrual_frequency=loan_accrual_frequency, post_date=posting_date
+	):
 		process_loan_interest_accrual_for_loans(posting_date=posting_date)
+
 
 def process_loan_interest_accrual_for_loans(
 	posting_date=None, loan_product=None, loan=None, accrual_type="Regular"

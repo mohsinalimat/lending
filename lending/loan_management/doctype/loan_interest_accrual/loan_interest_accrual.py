@@ -4,8 +4,20 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, date_diff, flt, get_datetime, getdate, nowdate
+from frappe.utils import (
+	add_days,
+	add_months,
+	cint,
+	date_diff,
+	flt,
+	get_datetime,
+	get_first_day,
+	get_first_day_of_week,
+	getdate,
+	nowdate,
+)
 
+from erpnext import get_default_company
 from erpnext.accounts.general_ledger import make_gl_entries
 from erpnext.controllers.accounts_controller import AccountsController
 
@@ -196,6 +208,12 @@ def calculate_accrual_amount_for_loans(
 		overlapping_dates = get_overlapping_dates(
 			loan.name, last_accrual_date, posting_date, loan_disbursement=loan_disbursement
 		)
+		company = get_default_company()
+		loan_accrual_frequency = get_loan_accrual_frequency(company)
+
+		overlapping_dates = get_accrual_frequency_breaks(
+			last_accrual_date, posting_date, loan_accrual_frequency
+		)
 		for schedule in overlapping_dates:
 			last_accrual_date_for_schedule = (
 				get_last_accrual_date(
@@ -270,6 +288,84 @@ def calculate_accrual_amount_for_loans(
 			create_loan_demand(loan.name, posting_date, "Normal", "Interest", payable_interest)
 	if is_future_accrual:
 		return total_payable_interest
+
+
+def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_frequency):
+	match loan_accrual_frequency:
+		case "Daily":
+			return get_accrual_frequency_breaks_daily(last_accrual_date, accrual_date)
+		case "Weekly":
+			return get_accrual_frequency_breaks_weekly(last_accrual_date, accrual_date)
+		case "Fortnightly":
+			return get_accrual_frequency_breaks_fortnightly(last_accrual_date, accrual_date)
+		case "Monthly":
+			return get_accrual_frequency_breaks_monthly(last_accrual_date, accrual_date)
+		case _:
+			frappe.throw("Loan Accrual Frequency not properly set in the 'Company' DocType.")
+
+
+def get_accrual_frequency_breaks_daily(last_accrual_date, accrual_date):
+	out = []
+	current_date = last_accrual_date
+	while current_date <= accrual_date:
+		out.append(current_date)
+		current_date = add_days(current_date, 1)
+	return out
+
+
+def get_accrual_frequency_breaks_weekly(last_accrual_date, accrual_date):
+	out = []
+	first_monday = add_days(get_first_day_of_week(last_accrual_date), 1)
+	current_date = first_monday
+	while current_date <= accrual_date:
+		out.append(current_date)
+		current_date = add_days(current_date, 7)
+	return out
+
+
+def get_accrual_frequency_breaks_fortnightly(last_accrual_date, accrual_date):
+	out = []
+	first_monday = add_days(get_first_day_of_week(last_accrual_date), 1)
+	current_date = first_monday
+	while current_date <= accrual_date:
+		if is_posting_date_accrual_day("Fortnightly", current_date):
+			out.append(current_date)
+		current_date = add_days(current_date, 7)
+	return out
+
+
+def get_accrual_frequency_breaks_monthly(last_accrual_date, accrual_date):
+	out = []
+	first_day = get_first_day(last_accrual_date)
+	current_date = add_months(first_day, 1)
+	while current_date <= accrual_date:
+		out.append(current_date)
+		current_date = add_months(current_date, 1)
+	return out
+
+
+def is_posting_date_accrual_day(loan_accrual_frequency, posting_date):
+	day_of_the_month = getdate(posting_date).day
+	weekday = getdate(posting_date).weekday()
+	match loan_accrual_frequency:
+		case "Daily":
+			return True
+		case "Weekly":
+			if weekday == 0:
+				return True
+		case "Fortnightly":
+			# More thinking required
+			# May or may not work
+			# The logic for week_of_the_month assumes it's Monday, so should only be used
+			# in this specific circumstance
+			week_of_the_month = ((day_of_the_month - 1) // 7) % 2
+			if weekday == 0 and (week_of_the_month == 1 or week_of_the_month == 3):
+				return True
+			pass
+		case "Monthly":
+			if day_of_the_month == 1:
+				return True
+	return False
 
 
 def get_interest_for_term(company, rate_of_interest, pending_principal_amount, from_date, to_date):
@@ -891,3 +987,14 @@ def reverse_loan_interest_accruals(
 			)
 
 	return accruals
+
+
+def get_loan_accrual_frequency(company):
+	company_doc = frappe.qb.DocType("Company")
+	query = (
+		frappe.qb.from_(company_doc)
+		.select(company_doc.loan_accrual_frequency)
+		.where(company_doc.name == company)
+	)
+	loan_accrual_frequency = query.run(as_dict=True)[0]["loan_accrual_frequency"]
+	return loan_accrual_frequency
