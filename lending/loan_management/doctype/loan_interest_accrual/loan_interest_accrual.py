@@ -419,7 +419,6 @@ def calculate_penal_interest_for_loans(
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import get_unpaid_demands
 
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
-	demands = get_unpaid_demands(loan.name, posting_date, emi_wise=True)
 
 	loan_product, freeze_date, loan_status, penal_interest_rate = frappe.get_value(
 		"Loan", loan.name, ["loan_product", "freeze_date", "status", "penalty_charges_rate"]
@@ -432,6 +431,10 @@ def calculate_penal_interest_for_loans(
 			"Loan Product", loan_product, "penalty_interest_rate", cache=True
 		)
 
+	if flt(penal_interest_rate, precision) <= 0:
+		return
+
+	demands = get_unpaid_demands(loan.name, posting_date, emi_wise=True)
 	grace_period_days = cint(
 		frappe.get_value("Loan Product", loan_product, "grace_period_in_days", cache=True)
 	)
