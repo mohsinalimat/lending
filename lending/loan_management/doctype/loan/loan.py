@@ -736,12 +736,23 @@ def update_days_past_due_in_loans(
 				loan_disbursement=disbursement,
 			)
 		else:
-			repost_days_past_due_log(
-				loan_name,
-				posting_date=posting_date,
-				loan_product=loan_product,
-				loan_disbursement=disbursement,
-			)
+			if frappe.flags.in_test or frappe.flags.in_import:
+				repost_days_past_due_log(
+					loan_name,
+					posting_date=posting_date,
+					loan_product=loan_product,
+					loan_disbursement=disbursement,
+				)
+			else:
+				frappe.enqueue(
+					repost_days_past_due_log,
+					loan=loan_name,
+					posting_date=posting_date,
+					loan_product=loan_product,
+					loan_disbursement=disbursement,
+					queue="long",
+					enqueue_after_commit=True,
+				)
 
 			return
 
@@ -841,7 +852,7 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 
 	demands = frappe.db.sql(
 		"""
-		SELECT demand_date, demand_subtype, sum(demand_amount) as demand_amount, sum(outstanding_amount) as outstanding_amount
+		SELECT demand_date, loan_disbursement, demand_subtype, sum(demand_amount) as demand_amount, sum(outstanding_amount) as outstanding_amount
 		FROM `tabLoan Demand`
 		WHERE loan = %s
 			AND docstatus = 1
@@ -897,22 +908,20 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 						demand.demand_amount -= paid_principal
 						payment.total_principal_paid -= paid_principal
 
-				dpd_counter = 0
 				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
 					if any(d.demand_date <= payment_date and d.demand_amount > 0 for d in demands):
-						dpd_counter += 1  # Increment the DPD for active demands
 						if payment_date >= getdate(posting_date):
-							create_dpd_record(loan, loan_disbursement, payment_date, dpd_counter)
+							days_past_due = date_diff(getdate(demand.demand_date), payment_date) + 1
+							create_dpd_record(loan, demands.loan_disbursement, payment_date, days_past_due)
 					else:
-						dpd_counter = 0  # Reset DPD when no active demands
 						if payment_date >= getdate(posting_date):
-							create_dpd_record(loan, loan_disbursement, payment_date, 0)
+							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)
 
 				# Ensure DPD is 0 after the last payment date if no demands exist
 				if idx == len(payment_against_demand) - 1:
 					for payment_date in daterange(getdate(next_payment_date), getdate()):
 						if payment_date >= getdate(posting_date):
-							create_dpd_record(loan, loan_disbursement, payment_date, 0)
+							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)
 
 
 def create_loan_write_off(loan, posting_date):
