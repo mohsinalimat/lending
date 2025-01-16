@@ -925,7 +925,6 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 							dpd_counter += 1
 							create_dpd_record(loan, demand.loan_disbursement, payment_date, dpd_counter)
 						else:
-							dpd_counter = 0
 							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)
 
 				# Ensure DPD is 0 after the last payment date if no demands exist
