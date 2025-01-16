@@ -154,6 +154,7 @@ class LoanRepayment(AccountsController):
 			"Interest Waiver",
 			"Penalty Waiver",
 			"Charges Waiver",
+			"Normal Repayment",
 		):
 			max_date = None
 			reversed_accruals += reverse_loan_interest_accruals(
@@ -643,10 +644,7 @@ class LoanRepayment(AccountsController):
 			if flt(self.amount_paid) < (flt(amounts.get("payable_amount")) - flt(auto_write_off_amount)):
 				frappe.throw(_("Amount paid cannot be less than payable amount for loan closure"))
 
-		if (
-			self.repayment_type in ("Interest Waiver", "Penalty Waiver", "Charges Waiver")
-			and not self.is_write_off_waiver
-		):
+		if self.repayment_type in ("Interest Waiver", "Penalty Waiver", "Charges Waiver"):
 			precision = cint(frappe.db.get_default("currency_precision")) or 2
 			payable_amount = self.get_waiver_amount(amounts)
 
