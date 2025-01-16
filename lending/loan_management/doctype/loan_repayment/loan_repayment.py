@@ -1659,26 +1659,25 @@ class LoanRepayment(AccountsController):
 			payment_party_type = ""
 			payment_party = ""
 
-			gl_entry = self.get_gl_dict(
-				{
-					"account": account,
-					"against": against_account,
-					"debit": amount,
-					"debit_in_account_currency": amount,
-					"against_voucher_type": "Loan",
-					"against_voucher": self.against_loan,
-					"remarks": _(remarks),
-					"cost_center": self.cost_center,
-					"party": payment_party,
-					"party_type": payment_party_type,
-					"posting_date": getdate(self.posting_date),
-				}
-			)
 			account_type = frappe.db.get_value("Account", account, ["account_type"])
-			if account_type not in ("Receivable", "Payable"):
-				del gl_entry.party
-				del gl_entry.party_type
-			gl_entries.append(gl_entry)
+			gl_entries.append(
+				self.get_gl_dict(
+					{
+						"account": account,
+						"against": against_account,
+						"debit": amount,
+						"debit_in_account_currency": amount,
+						"against_voucher_type": "Loan",
+						"against_voucher": self.against_loan,
+						"remarks": _(remarks),
+						"cost_center": self.cost_center,
+						"party": payment_party if account_type in ("Receivable", "Payable") else None,
+						"party_type": payment_party_type if account_type in ("Receivable", "Payable") else None,
+						"posting_date": getdate(self.posting_date),
+					}
+				)
+			)
+			account_type = frappe.db.get_value("Account", against_account, ["account_type"])
 		gl_entries.append(
 			self.get_gl_dict(
 				{
