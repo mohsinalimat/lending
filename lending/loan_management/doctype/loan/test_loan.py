@@ -14,6 +14,7 @@ from frappe.utils import (
 	getdate,
 	nowdate,
 )
+from datetime import datetime
 
 from erpnext.selling.doctype.customer.test_customer import get_customer_dict
 from erpnext.setup.doctype.employee.test_employee import make_employee
@@ -119,7 +120,7 @@ class TestLoan(unittest.TestCase):
 			25,
 			1,
 			5,
-			"Cash",
+			"Cash - _TC",
 			"Disbursement Account - _TC",
 			"Payment Account - _TC",
 			"Loan Account - _TC",
@@ -136,7 +137,7 @@ class TestLoan(unittest.TestCase):
 			25,
 			0,
 			5,
-			"Cash",
+			"Cash - _TC",
 			"Disbursement Account - _TC",
 			"Payment Account - _TC",
 			"Loan Account - _TC",
@@ -1464,10 +1465,10 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
-	def test_dpd_calulation(self):
+	def test_dpd_calculation(self):
 		loan = create_loan(
 			"_Test Customer 1",
-			"Term Loan Product 2",
+			"Term Loan Product 4",
 			100000,
 			"Repay Over Number of Periods",
 			30,
@@ -1499,6 +1500,11 @@ class TestLoan(unittest.TestCase):
 		repayment_entry = create_repayment_entry(loan.name, "2024-11-10", 782)
 		repayment_entry.submit()
 
+		frappe.db.sql("""
+		update `tabDays Past Due Log` set days_past_due = -1 where loan = %s """, loan.name)
+
+		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
+
 		dpd_logs = frappe.db.sql(
 			"""
 			SELECT posting_date, days_past_due
@@ -1525,8 +1531,6 @@ class TestLoan(unittest.TestCase):
 			"2024-11-09": 5,
 			"2024-11-10": 0,  # Fully repaid
 		}
-
-		repayment_date = datetime.strptime("2024-10-09", "%Y-%m-%d").date()
 
 		for log in dpd_logs:
 			posting_date = log["posting_date"]
