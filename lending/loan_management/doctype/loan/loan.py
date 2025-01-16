@@ -908,11 +908,12 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 						demand.demand_amount -= paid_principal
 						payment.total_principal_paid -= paid_principal
 
+				dpd_counter = 0
 				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
 					if any(d.demand_date <= payment_date and d.demand_amount > 0 for d in demands):
 						if payment_date >= getdate(posting_date):
-							days_past_due = date_diff(getdate(demand.demand_date), payment_date) + 1
-							create_dpd_record(loan, demands.loan_disbursement, payment_date, days_past_due)
+							dpd_counter += 1
+							create_dpd_record(loan, demand.loan_disbursement, payment_date, dpd_counter)
 					else:
 						if payment_date >= getdate(posting_date):
 							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)

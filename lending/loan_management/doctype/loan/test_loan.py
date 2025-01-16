@@ -14,6 +14,7 @@ from frappe.utils import (
 	getdate,
 	nowdate,
 )
+from datetime import datetime
 
 from erpnext.selling.doctype.customer.test_customer import get_customer_dict
 from erpnext.setup.doctype.employee.test_employee import make_employee
@@ -119,7 +120,7 @@ class TestLoan(unittest.TestCase):
 			25,
 			1,
 			5,
-			"Cash",
+			"Cash - _TC",
 			"Disbursement Account - _TC",
 			"Payment Account - _TC",
 			"Loan Account - _TC",
@@ -136,7 +137,7 @@ class TestLoan(unittest.TestCase):
 			25,
 			0,
 			5,
-			"Cash",
+			"Cash - _TC",
 			"Disbursement Account - _TC",
 			"Payment Account - _TC",
 			"Loan Account - _TC",
@@ -1467,7 +1468,7 @@ class TestLoan(unittest.TestCase):
 	def test_dpd_calulation(self):
 		loan = create_loan(
 			"_Test Customer 1",
-			"Term Loan Product 2",
+			"Term Loan Product 4",
 			100000,
 			"Repay Over Number of Periods",
 			30,
@@ -1498,6 +1499,11 @@ class TestLoan(unittest.TestCase):
 
 		repayment_entry = create_repayment_entry(loan.name, "2024-11-10", 782)
 		repayment_entry.submit()
+
+		frappe.db.sql("""
+		update `tabDays Past Due Log` set days_past_due = -1 where loan = %s """, loan.name)
+
+		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
 
 		dpd_logs = frappe.db.sql(
 			"""
@@ -1540,6 +1546,13 @@ class TestLoan(unittest.TestCase):
 				expected_dpd,
 				f"DPD mismatch for {posting_date}: Expected {expected_dpd}, got {dpd_value}",
 			)
+
+		# create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
+		# create_process_loan_classification(posting_date="2024-10-06", loan=loan.name)
+		# create_process_loan_classification(posting_date="2024-10-07", loan=loan.name)
+		# create_process_loan_classification(posting_date="2024-10-08", loan=loan.name)
+		# create_process_loan_classification(posting_date="2024-10-09", loan=loan.name)
+		# create_process_loan_classification(posting_date="2024-10-10", loan=loan.name)
 
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):
