@@ -2,6 +2,7 @@
 # See license.txt
 
 import unittest
+from datetime import datetime
 
 import frappe
 from frappe.utils import (
@@ -14,7 +15,6 @@ from frappe.utils import (
 	getdate,
 	nowdate,
 )
-from datetime import datetime
 
 from erpnext.selling.doctype.customer.test_customer import get_customer_dict
 from erpnext.setup.doctype.employee.test_employee import make_employee
@@ -1500,8 +1500,11 @@ class TestLoan(unittest.TestCase):
 		repayment_entry = create_repayment_entry(loan.name, "2024-11-10", 782)
 		repayment_entry.submit()
 
-		frappe.db.sql("""
-		update `tabDays Past Due Log` set days_past_due = -1 where loan = %s """, loan.name)
+		frappe.db.sql(
+			"""
+		update `tabDays Past Due Log` set days_past_due = -1 where loan = %s """,
+			loan.name,
+		)
 
 		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
 
