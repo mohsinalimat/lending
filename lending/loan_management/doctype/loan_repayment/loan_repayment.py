@@ -150,11 +150,16 @@ class LoanRepayment(AccountsController):
 		self.create_loan_limit_change_log()
 		self.make_gl_entries()
 
-		if self.is_term_loan and self.repayment_type not in (
-			"Interest Waiver",
-			"Penalty Waiver",
-			"Charges Waiver",
-			"Normal Repayment",
+		if (
+			self.is_term_loan
+			and self.repayment_type
+			not in (
+				"Interest Waiver",
+				"Penalty Waiver",
+				"Charges Waiver",
+				"Normal Repayment",
+			)
+			and not self.flags.from_repost
 		):
 			max_date = None
 			reversed_accruals += reverse_loan_interest_accruals(
@@ -759,7 +764,7 @@ class LoanRepayment(AccountsController):
 
 		query.run()
 
-		if not self.flags.from_repost:
+		if not self.flags.from_repost and self.repayment_type != "Normal Repayment":
 			self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
 
 		update_shortfall_status(self.against_loan, self.principal_amount_paid)
