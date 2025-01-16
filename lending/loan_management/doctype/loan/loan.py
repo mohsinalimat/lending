@@ -844,6 +844,8 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 	where_conditions = ""
 	payment_conditions = ""
 
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
+
 	if loan_product:
 		where_conditions += f"AND loan_product = '{loan_product}'"
 
@@ -898,19 +900,25 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 			)
 			for demand in demands:
 				if demand.demand_date <= getdate(payment.posting_date):
-					if demand.demand_subtype == "Interest" and payment.total_interest_paid > 0:
-						paid_interest = min(payment.total_interest_paid, demand.demand_amount)
+					if demand.demand_subtype == "Interest" and flt(payment.total_interest_paid, precision) > 0:
+						paid_interest = min(
+							flt(payment.total_interest_paid, precision), flt(demand.demand_amount, precision)
+						)
 						demand.demand_amount -= paid_interest
 						payment.total_interest_paid -= paid_interest
 
-					if demand.demand_subtype == "Principal" and payment.total_principal_paid > 0:
-						paid_principal = min(payment.total_principal_paid, demand.demand_amount)
+					if demand.demand_subtype == "Principal" and flt(payment.total_principal_paid, precision) > 0:
+						paid_principal = min(
+							flt(payment.total_principal_paid, precision), flt(demand.demand_amount, precision)
+						)
 						demand.demand_amount -= paid_principal
 						payment.total_principal_paid -= paid_principal
 
 				dpd_counter = 0
 				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
-					if any(d.demand_date <= payment_date and d.demand_amount > 0 for d in demands):
+					if any(
+						d.demand_date <= payment_date and flt(d.demand_amount, precision) > 0 for d in demands
+					):
 						if payment_date >= getdate(posting_date):
 							dpd_counter += 1
 							create_dpd_record(loan, demand.loan_disbursement, payment_date, dpd_counter)
