@@ -1465,7 +1465,7 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
-	def test_dpd_calulation(self):
+	def test_dpd_calculation(self):
 		loan = create_loan(
 			"_Test Customer 1",
 			"Term Loan Product 4",
@@ -1532,8 +1532,6 @@ class TestLoan(unittest.TestCase):
 			"2024-11-10": 0,  # Fully repaid
 		}
 
-		repayment_date = datetime.strptime("2024-10-09", "%Y-%m-%d").date()
-
 		for log in dpd_logs:
 			posting_date = log["posting_date"]
 			dpd_value = log["days_past_due"]
@@ -1546,13 +1544,6 @@ class TestLoan(unittest.TestCase):
 				expected_dpd,
 				f"DPD mismatch for {posting_date}: Expected {expected_dpd}, got {dpd_value}",
 			)
-
-		# create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
-		# create_process_loan_classification(posting_date="2024-10-06", loan=loan.name)
-		# create_process_loan_classification(posting_date="2024-10-07", loan=loan.name)
-		# create_process_loan_classification(posting_date="2024-10-08", loan=loan.name)
-		# create_process_loan_classification(posting_date="2024-10-09", loan=loan.name)
-		# create_process_loan_classification(posting_date="2024-10-10", loan=loan.name)
 
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):
