@@ -916,14 +916,15 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 
 				dpd_counter = 0
 				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
-					if any(
-						d.demand_date <= payment_date and flt(d.demand_amount, precision) > 0 for d in demands
-					):
-						if payment_date >= getdate(posting_date):
+					if payment_date >= getdate(posting_date):
+						active_demands = [
+							d for d in demands if flt(d.demand_amount, precision) > 0 and d.demand_date <= payment_date
+						]
+
+						if active_demands:
 							dpd_counter += 1
 							create_dpd_record(loan, demand.loan_disbursement, payment_date, dpd_counter)
-					else:
-						if payment_date >= getdate(posting_date):
+						else:
 							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)
 
 				# Ensure DPD is 0 after the last payment date if no demands exist
