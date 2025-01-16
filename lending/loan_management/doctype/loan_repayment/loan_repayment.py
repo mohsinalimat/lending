@@ -154,6 +154,7 @@ class LoanRepayment(AccountsController):
 			"Interest Waiver",
 			"Penalty Waiver",
 			"Charges Waiver",
+			"Normal Repayment",
 		):
 			max_date = None
 			reversed_accruals += reverse_loan_interest_accruals(
