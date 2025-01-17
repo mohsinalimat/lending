@@ -160,6 +160,14 @@ class LoanRepaymentRepost(Document):
 			frappe.flags.on_repost = True
 
 			frappe.get_doc(
+				{
+					"doctype": "Process Loan Interest Accrual",
+					"loan": self.loan,
+					"posting_date": entry.posting_date,
+				}
+			).submit()
+
+			frappe.get_doc(
 				{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": entry.posting_date}
 			).submit()
 
@@ -225,6 +233,10 @@ class LoanRepaymentRepost(Document):
 
 			repayment_doc.flags.from_repost = False
 			frappe.flags.on_repost = False
+
+		frappe.get_doc(
+			{"doctype": "Process Loan Interest Accrual", "loan": self.loan, "posting_date": getdate()}
+		).submit()
 
 		frappe.get_doc(
 			{"doctype": "Process Loan Demand", "loan": self.loan, "posting_date": getdate()}
