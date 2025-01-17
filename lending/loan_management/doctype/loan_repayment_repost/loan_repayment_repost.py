@@ -55,7 +55,7 @@ class LoanRepaymentRepost(Document):
 		if self.cancel_future_emi_demands:
 			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
 
-		if self.cancel_future_penal_accrual_and_demands:
+		if self.cancel_future_penal_accruals_and_demands:
 			reverse_loan_interest_accruals(self.loan, self.repost_date, interest_type="Penal Interest")
 			reverse_demands(self.loan, self.repost_date, demand_type="Penalty")
 
