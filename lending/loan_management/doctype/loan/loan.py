@@ -914,24 +914,22 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 						demand.demand_amount -= paid_principal
 						payment.total_principal_paid -= paid_principal
 
-				dpd_counter = 0
-				for payment_date in daterange(getdate(payment.posting_date), getdate(next_payment_date)):
-					if payment_date >= getdate(posting_date):
-						active_demands = [
-							d for d in demands if flt(d.demand_amount, precision) > 0 and d.demand_date <= payment_date
-						]
+			start_date = getdate(payment.posting_date)
+			end_date = getdate(next_payment_date)
 
-						if active_demands:
-							dpd_counter += 1
-							create_dpd_record(loan, demand.loan_disbursement, payment_date, dpd_counter)
-						else:
-							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)
+			for current_date in daterange(start_date, end_date):
+				if current_date >= getdate(posting_date):
+					matching_demand_found = False
+					for d in demands:
+						demand_amount = flt(d.demand_amount, precision)
+						if d.demand_date <= current_date and demand_amount > 0:
+							dpd_counter = date_diff(current_date, d.demand_date) + 1
+							create_dpd_record(loan, demand.loan_disbursement, current_date, dpd_counter)
+							matching_demand_found = True
+							break
 
-				# Ensure DPD is 0 after the last payment date if no demands exist
-				if idx == len(payment_against_demand) - 1:
-					for payment_date in daterange(getdate(next_payment_date), getdate()):
-						if payment_date >= getdate(posting_date):
-							create_dpd_record(loan, demand.loan_disbursement, payment_date, 0)
+					if not matching_demand_found:
+						create_dpd_record(loan, demand.loan_disbursement, current_date, 0)
 
 
 def create_loan_write_off(loan, posting_date):
