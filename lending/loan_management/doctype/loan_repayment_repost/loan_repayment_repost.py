@@ -48,9 +48,16 @@ class LoanRepaymentRepost(Document):
 
 	def cancel_demands(self):
 		from lending.loan_management.doctype.loan_demand.loan_demand import reverse_demands
+		from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
+			reverse_loan_interest_accruals,
+		)
 
 		if self.cancel_future_emi_demands:
 			reverse_demands(self.loan, self.repost_date, demand_type="EMI")
+
+		if self.cancel_future_penal_accrual_and_demands:
+			reverse_loan_interest_accruals(self.loan, self.repost_date, interest_type="Penal Interest")
+			reverse_demands(self.loan, self.repost_date, demand_type="Penalty")
 
 	def clear_demand_allocation(self):
 		demands = frappe.get_all(
