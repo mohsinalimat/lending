@@ -1648,9 +1648,9 @@ def create_loan_accounts():
 
 	create_account(
 		"Additional Interest Accrued Account",
-		"Loans and Advances (Assets) - _TC",
+		"Accounts Receivable - _TC",
 		"Asset",
-		"",
+		"Receivable",
 		"Balance Sheet",
 	)
 
@@ -1659,28 +1659,28 @@ def create_loan_accounts():
 	)
 	create_account(
 		"Interest Receivable",
-		"Loans and Advances (Assets) - _TC",
+		"Accounts Receivable - _TC",
 		"Asset",
 		"Receivable",
 		"Balance Sheet",
 	)
 	create_account(
-		"Charges Receivable", "Loans and Advances (Assets) - _TC", "Asset", "Receivable", "Balance Sheet"
+		"Charges Receivable", "Accounts Receivable - _TC", "Asset", "Receivable", "Balance Sheet"
 	)
 	create_account(
-		"Penalty Receivable", "Loans and Advances (Assets) - _TC", "Asset", "Receivable", "Balance Sheet"
+		"Penalty Receivable", "Accounts Receivable - _TC", "Asset", "Receivable", "Balance Sheet"
 	)
 
 	create_account(
 		"Additional Interest Receivable",
-		"Loans and Advances (Assets) - _TC",
+		"Accounts Receivable - _TC",
 		"Asset",
 		"Receivable",
 		"Balance Sheet",
 	)
 	create_account(
 		"Suspense Interest Receivable",
-		"Loans and Advances (Assets) - _TC",
+		"Accounts Receivable - _TC",
 		"Asset",
 		"Receivable",
 		"Balance Sheet",
@@ -1694,31 +1694,31 @@ def create_loan_accounts():
 	)
 
 	create_account(
-		"Interest Accrued Account", "Loans and Advances (Assets) - _TC", "Asset", "", "Balance Sheet"
+		"Interest Accrued Account", "Accounts Receivable - _TC", "Asset", "Receivable", "Balance Sheet"
 	)
 
 	create_account(
 		"Additional Interest Accrued Account",
-		"Loans and Advances (Assets) - _TC",
+		"Accounts Receivable - _TC",
 		"Asset",
-		"",
+		"Receivable",
 		"Balance Sheet",
 	)
 
 	create_account(
 		"Suspense Interest Accrued Account",
-		"Loans and Advances (Assets) - _TC",
+		"Accounts Receivable - _TC",
 		"Asset",
-		"",
+		"Receivable",
 		"Balance Sheet",
 	)
 
 	create_account(
-		"Penalty Accrued Account", "Loans and Advances (Assets) - _TC", "Asset", "", "Balance Sheet"
+		"Penalty Accrued Account", "Accounts Receivable - _TC", "Asset", "Receivable", "Balance Sheet"
 	)
 
 	create_account(
-		"Broken Period Interest Receivable", "Direct Income - _TC", "", "Receivable", "Profit and Loss"
+		"Broken Period Interest", "Accounts Receivable - _TC", "Asset", "Receivable", "Profit and Loss"
 	)
 
 	create_account(
@@ -1726,14 +1726,14 @@ def create_loan_accounts():
 	)
 
 	create_account(
-		"Write Off Recovery", "Direct Expenses - _TC", "Expense", "Expense Account", "Profit and Loss"
+		"Write Off Recovery", "Loans and Advances - _TC", "Liability", "Receivable", "Balance Sheet"
 	)
 
 	create_account(
 		"Customer Refund Account",
 		"Loans and Advances (Assets) - _TC",
-		"Asset",
-		"",
+		"Liability",
+		"Receivable",
 		"Balance Sheet",
 	)
 
