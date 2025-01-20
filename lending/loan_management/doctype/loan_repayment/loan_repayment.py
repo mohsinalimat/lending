@@ -754,16 +754,20 @@ class LoanRepayment(AccountsController):
 				query = query.set(loan.status, "Closed")
 				query = query.set(loan.closure_date, self.posting_date)
 			self.update_repayment_schedule_status()
+
+			if not self.flags.from_repost:
+				self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
+
 		elif self.repayment_type == "Full Settlement":
 			if self.repayment_schedule_type != "Line of Credit":
 				query = query.set(loan.status, "Settled")
 				query = query.set(loan.settlement_date, self.posting_date)
 			self.update_repayment_schedule_status()
 
-		query.run()
+			if not self.flags.from_repost:
+				self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
 
-		if not self.flags.from_repost:
-			self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
+		query.run()
 
 		update_shortfall_status(self.against_loan, self.principal_amount_paid)
 
