@@ -726,7 +726,7 @@ def update_days_past_due_in_loans(
 	)
 
 	for disbursement in disbursements:
-		if posting_date == add_days(getdate(), -1) or force_update_dpd_in_loan:
+		if getdate(posting_date) > add_days(getdate(), -1) or force_update_dpd_in_loan:
 			demand = get_unpaid_demands(
 				loan_name,
 				posting_date=posting_date,
@@ -882,9 +882,9 @@ def repost_days_past_due_log(loan, posting_date, loan_product, loan_disbursement
 			FROM `tabLoan Repayment`
 			WHERE against_loan = %s
 				and docstatus = 1
+				{0}
 			GROUP BY posting_date
 			ORDER BY posting_date
-				{0}
 		""".format(
 				payment_conditions
 			),
