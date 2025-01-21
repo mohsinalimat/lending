@@ -280,7 +280,7 @@ class Loan(AccountsController):
 			msg = _("Loan amount cannot be greater than {0}").format(self.maximum_limit_amount)
 			frappe.throw(msg)
 
-		if not self.loan_amount:
+		if not self.loan_amount and self.repayment_schedule_type != "Line of Credit":
 			frappe.throw(_("Loan amount is mandatory"))
 
 	def link_loan_security_assignment(self):
