@@ -1609,13 +1609,11 @@ def create_loan_accounts():
 		"Loans and Advances (Assets)",
 		"Current Assets - _TC",
 		"Asset",
-		"Bank",
+		"",
 		"Balance Sheet",
 		is_group=1,
 	)
-	create_account(
-		"Loan Account", "Loans and Advances (Assets) - _TC", "Asset", "Bank", "Balance Sheet"
-	)
+	create_account("Loan Account", "Loans and Advances (Assets) - _TC", "Asset", "", "Balance Sheet")
 	create_account("Payment Account", "Bank Accounts - _TC", "Asset", "Bank", "Balance Sheet")
 	create_account("Disbursement Account", "Bank Accounts - _TC", "Asset", "Bank", "Balance Sheet")
 	create_account(
