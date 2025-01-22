@@ -1478,7 +1478,6 @@ class LoanRepayment(AccountsController):
 			return
 
 		gle_map = self.get_gl_map()
-
 		if gle_map:
 			make_gl_entries(gle_map, cancel=cancel, adv_adj=adv_adj)
 
@@ -1600,9 +1599,9 @@ class LoanRepayment(AccountsController):
 					against_voucher=repayment.sales_invoice,
 				)
 
-		self.add_loan_partner_gl_entries(gle_map)
 		self.add_round_off_gl_entry(gle_map)
 
+		self.add_loan_partner_gl_entries(gle_map)
 		gle_map = process_gl_map(gle_map)
 
 		return gle_map
