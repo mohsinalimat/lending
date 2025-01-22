@@ -1210,7 +1210,7 @@ class LoanRepayment(AccountsController):
 					amount_paid -= pending_interest
 
 			unbooked_penalty = flt(amounts.get("unbooked_penalty"))
-			if unbooked_penalty > 0:
+			if unbooked_penalty > 0 and self.repayment_type != "Interest Waiver":
 				if unbooked_penalty > amount_paid:
 					self.total_penalty_paid += amount_paid
 					self.unbooked_penalty_paid += amount_paid
@@ -1365,16 +1365,15 @@ class LoanRepayment(AccountsController):
 				pending_amount = self.adjust_component(
 					pending_amount, "EMI", demands, demand_subtype="Principal"
 				)
-				if (
-					self.repayment_type
-					in (
-						"Partial Settlement",
-						"Full Settlement",
-						"Write Off Recovery",
-						"Write Off Settlement",
-						"Principal Adjustment",
-					)
-					or status == "Settled"
+				if self.repayment_type in (
+					"Partial Settlement",
+					"Full Settlement",
+					"Write Off Recovery",
+					"Write Off Settlement",
+					"Principal Adjustment",
+				) or (
+					status == "Settled"
+					and self.repayment_type not in ("Interest Waiver", "Penalty Waiver", "Charges Waiver")
 				):
 					principal_amount_paid = sum(
 						d.paid_amount for d in self.get("repayment_details") if d.demand_subtype == "Principal"
