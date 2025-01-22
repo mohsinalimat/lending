@@ -413,14 +413,12 @@ class TestLoan(IntegrationTestCase):
 		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
 			days_in_year(get_datetime(first_date).year) * 100
 		)
-
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
-		process_loan_interest_accrual_for_loans(posting_date=last_date)
-
+		process_daily_loan_demands(posting_date=add_days(last_date, 5), loan=loan)
 		repayment_entry = create_repayment_entry(
 			loan.name,
 			add_days(last_date, 5),
-			flt(loan.loan_amount + accrued_interest_amount),
+			flt(loan.loan_amount),
 		)
 
 		repayment_entry.submit()
@@ -750,7 +748,6 @@ class TestLoan(IntegrationTestCase):
 			loan.name,
 			self.applicant2,
 			add_days(last_date, 5),
-			flt(loan.loan_amount + accrued_interest_amount),
 		)
 		repayment_entry.submit()
 
@@ -1646,9 +1643,9 @@ def create_loan_accounts():
 
 	create_account(
 		"Additional Interest Accrued Account",
-		"Accounts Receivable - _TC",
+		"Current Assets - _TC",
 		"Asset",
-		"Receivable",
+		"",
 		"Balance Sheet",
 	)
 
@@ -1691,29 +1688,25 @@ def create_loan_accounts():
 		"Suspense Penalty Account", "Direct Income - _TC", "Income", "Income Account", "Profit and Loss"
 	)
 
-	create_account(
-		"Interest Accrued Account", "Accounts Receivable - _TC", "Asset", "Receivable", "Balance Sheet"
-	)
+	create_account("Interest Accrued Account", "Current Assets - _TC", "Asset", "", "Balance Sheet")
 
 	create_account(
 		"Additional Interest Accrued Account",
-		"Accounts Receivable - _TC",
+		"Current Assets - _TC",
 		"Asset",
-		"Receivable",
+		"",
 		"Balance Sheet",
 	)
 
 	create_account(
 		"Suspense Interest Accrued Account",
-		"Accounts Receivable - _TC",
+		"Current Assets - _TC",
 		"Asset",
-		"Receivable",
+		"",
 		"Balance Sheet",
 	)
 
-	create_account(
-		"Penalty Accrued Account", "Accounts Receivable - _TC", "Asset", "Receivable", "Balance Sheet"
-	)
+	create_account("Penalty Accrued Account", "Current Assets - _TC", "Asset", "", "Balance Sheet")
 
 	create_account(
 		"Broken Period Interest", "Accounts Receivable - _TC", "Asset", "Receivable", "Profit and Loss"
@@ -1724,7 +1717,11 @@ def create_loan_accounts():
 	)
 
 	create_account(
-		"Write Off Recovery", "Loans and Advances - _TC", "Liability", "Receivable", "Balance Sheet"
+		"Write Off Recovery",
+		"Loans and Advances (Assets) - _TC",
+		"Liability",
+		"Receivable",
+		"Balance Sheet",
 	)
 
 	create_account(

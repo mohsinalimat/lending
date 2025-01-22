@@ -5,17 +5,30 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import nowdate
 
-from lending.loan_management.doctype.loan_demand.loan_demand import make_loan_demand_for_term_loans
+from lending.loan_management.doctype.loan_demand.loan_demand import (
+	make_loan_demand_for_demand_loans,
+	make_loan_demand_for_term_loans,
+)
+from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_interest_accrual import (
+	process_loan_interest_accrual_for_loans,
+)
 
 
 class ProcessLoanDemand(Document):
 	def on_submit(self):
+		process_loan_interest_accrual_for_loans(
+			posting_date=self.posting_date, loan_product=self.loan_product, loan=self.loan
+		)
 		make_loan_demand_for_term_loans(
 			self.posting_date,
 			loan_product=self.loan_product,
 			loan=self.loan,
 			process_loan_demand=self.name,
 			loan_disbursement=self.loan_disbursement,
+		)
+		make_loan_demand_for_demand_loans(
+			self.posting_date,
+			loan=self.loan,
 		)
 
 

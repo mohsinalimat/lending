@@ -133,7 +133,8 @@ class LoanRepayment(AccountsController):
 			self.principal_amount_paid >= self.pending_principal_amount
 		):
 			self.book_interest_accrued_not_demanded()
-			self.book_pending_principal()
+			if self.is_term_loan:
+				self.book_pending_principal()
 
 		self.post_suspense_entries()
 
@@ -211,6 +212,9 @@ class LoanRepayment(AccountsController):
 		if not self.is_term_loan:
 			process_loan_interest_accrual_for_loans(
 				posting_date=self.posting_date, loan=self.against_loan, loan_product=self.loan_product
+			)
+			process_daily_loan_demands(
+				posting_date=self.posting_date, loan_product=self.loan_product, loan=self.against_loan
 			)
 
 	def post_suspense_entries(self, cancel=0):
@@ -751,6 +755,7 @@ class LoanRepayment(AccountsController):
 			"Charges Waiver",
 		):
 			if self.repayment_schedule_type != "Line of Credit":
+				frappe.throw(f"{self.payable_amount, self.amount_paid}")
 				query = query.set(loan.status, "Closed")
 				query = query.set(loan.closure_date, self.posting_date)
 			self.update_repayment_schedule_status()
@@ -1198,7 +1203,10 @@ class LoanRepayment(AccountsController):
 			pending_interest = flt(amounts.get("unaccrued_interest")) + flt(
 				amounts.get("unbooked_interest")
 			)
-
+			if not self.is_term_loan:
+				pending_interest += flt(
+					get_accrued_interest(posting_date=self.posting_date, loan=self.against_loan), precision
+				)
 			if pending_interest > 0:
 				if pending_interest > amount_paid:
 					self.total_interest_paid += amount_paid
