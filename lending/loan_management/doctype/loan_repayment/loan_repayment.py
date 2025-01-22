@@ -755,7 +755,6 @@ class LoanRepayment(AccountsController):
 			"Charges Waiver",
 		):
 			if self.repayment_schedule_type != "Line of Credit":
-				frappe.throw(f"{self.payable_amount, self.amount_paid}")
 				query = query.set(loan.status, "Closed")
 				query = query.set(loan.closure_date, self.posting_date)
 			self.update_repayment_schedule_status()

@@ -745,16 +745,9 @@ class TestLoan(IntegrationTestCase):
 		amounts = calculate_amounts(loan.name, add_days(last_date, 5))
 
 		repayment_entry = create_repayment_entry(
-			loan.name,
-			self.applicant2,
-			add_days(last_date, 5),
+			loan.name, add_days(last_date, 5), amounts["pending_principal_amount"]
 		)
 		repayment_entry.submit()
-
-		amounts = frappe.db.get_value(
-			"Loan Interest Accrual", {"loan": loan.name}, ["paid_interest_amount", "paid_principal_amount"]
-		)
-
 		request_loan_closure(loan.name)
 		loan.load_from_db()
 		self.assertEqual(loan.status, "Loan Closure Requested")
