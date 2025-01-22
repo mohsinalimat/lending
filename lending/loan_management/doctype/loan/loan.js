@@ -116,7 +116,7 @@ frappe.ui.form.on('Loan', {
 	},
 
 	loan_product: function(frm) {
-		frm.toggle_reqd("repayment_method", frm.doc.is_term_loan && frm.doc.repayment_schedule_type != "Line of Credit");
+		frm.toggle_reqd("repayment_method", frm.doc.is_term_loan && (frm.doc.repayment_schedule_type != "Line of Credit"));
 		frm.toggle_display("repayment_method", frm.doc.is_term_loan);
 		frm.toggle_display("repayment_periods", frm.doc.is_term_loan);
 	},
