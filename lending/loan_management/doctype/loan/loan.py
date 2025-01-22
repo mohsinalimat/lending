@@ -362,13 +362,22 @@ def get_total_loan_amount(applicant_type, applicant, company):
 		],
 	)
 
-	interest_amount = flt(
+	total_interest_amount = flt(
 		frappe.db.get_value(
 			"Loan Interest Accrual",
 			{"applicant_type": applicant_type, "company": company, "applicant": applicant, "docstatus": 1},
-			"sum(interest_amount - paid_interest_amount)",
+			"sum(interest_amount)",
 		)
 	)
+	paid_interest = flt(
+		frappe.db.get_value(
+			"Loan Repayment",
+			{"applicant_type": applicant_type, "company": company, "applicant": applicant, "docstatus": 1},
+			"sum(total_interest_paid)",
+		)
+	)
+
+	interest_amount = total_interest_amount - paid_interest
 
 	for loan in loan_details:
 		if loan.status in ("Disbursed", "Loan Closure Requested", "Active"):
