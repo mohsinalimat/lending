@@ -1324,14 +1324,16 @@ class TestLoan(IntegrationTestCase):
 
 		loan.submit()
 
-		make_loan_disbursement_entry(
+		loan_disbursement = make_loan_disbursement_entry(
 			loan.name, loan.loan_amount, disbursement_date="2024-03-06", repayment_start_date="2024-04-05"
 		)
 		process_daily_loan_demands(posting_date="2024-04-05", loan=loan.name)
 
 		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
 
-		repayment_entry = create_repayment_entry(loan.name, "2024-10-05", 47523)
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-10-05", 47523, loan_disbursement=loan_disbursement
+		)
 		repayment_entry.submit()
 
 	def test_shortfall_loan_close_limit(self):
@@ -1902,13 +1904,16 @@ def create_loan_security_price(loan_security, loan_security_price, uom, from_dat
 		).insert(ignore_permissions=True)
 
 
-def create_repayment_entry(loan, posting_date, paid_amount, repayment_type="Normal Repayment"):
+def create_repayment_entry(
+	loan, posting_date, paid_amount, repayment_type="Normal Repayment", loan_disbursement=None
+):
 	lr = frappe.new_doc("Loan Repayment")
 	lr.against_loan = loan
 	lr.company = "_Test Company"
 	lr.posting_date = posting_date or nowdate()
 	lr.amount_paid = paid_amount
 	lr.repayment_type = repayment_type
+	lr.loan_disbursement = loan_disbursement
 	lr.insert(ignore_permissions=True)
 
 	return lr
