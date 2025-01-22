@@ -1280,7 +1280,7 @@ class TestLoan(IntegrationTestCase):
 
 	def test_npa_loan(self):
 		loan = create_loan(
-			"Customer B",
+			self.applicant2,
 			"Term Loan Product 4",
 			500000,
 			"Repay Over Number of Periods",
