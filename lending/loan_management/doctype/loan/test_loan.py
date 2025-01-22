@@ -612,9 +612,7 @@ class TestLoan(IntegrationTestCase):
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
 		process_loan_interest_accrual_for_loans(posting_date=last_date)
 
-		repayment_entry = create_repayment_entry(
-			loan.name, self.applicant2, add_days(last_date, 5), 600000
-		)
+		repayment_entry = create_repayment_entry(loan.name, add_days(last_date, 5), 600000)
 		repayment_entry.submit()
 
 		unpledge_map = {"Test Security 2": 2000}
