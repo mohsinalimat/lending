@@ -1610,7 +1610,7 @@ class LoanRepayment(AccountsController):
 
 		if abs(diff) > 0:
 			round_off_account = frappe.db.get_value("Company", self.company, "round_off_account")
-			self.add_gl_entry(payment_account, round_off_account, -1 * diff, gle_map)
+			self.add_gl_entry(payment_account, round_off_account, -1 * diff, gle_map, is_waiver_entry=True)
 
 	def add_loan_partner_gl_entries(self, gle_map):
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
