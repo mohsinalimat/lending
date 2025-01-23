@@ -294,7 +294,6 @@ def calculate_accrual_amount_for_loans(
 				loan.rate_of_interest,
 			)
 
-			create_loan_demand(loan.name, posting_date, "Normal", "Interest", payable_interest)
 	if is_future_accrual:
 		return total_payable_interest
 

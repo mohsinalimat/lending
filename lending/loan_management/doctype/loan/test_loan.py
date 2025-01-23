@@ -418,7 +418,7 @@ class TestLoan(IntegrationTestCase):
 		repayment_entry = create_repayment_entry(
 			loan.name,
 			add_days(last_date, 5),
-			flt(loan.loan_amount),
+			flt(loan.loan_amount + accrued_interest_amount),
 		)
 
 		repayment_entry.submit()

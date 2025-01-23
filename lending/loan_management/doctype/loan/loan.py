@@ -423,7 +423,7 @@ def request_loan_closure(loan, posting_date=None, auto_close=0):
 		amounts["pending_principal_amount"]
 		+ amounts["interest_amount"]
 		+ amounts["penalty_amount"]
-		+ amounts.get("excess_amount_paid", 0)
+		- amounts.get("excess_amount_paid", 0)
 	)
 
 	loan_product, loan_status = frappe.get_value("Loan", loan, ["loan_product", "status"])

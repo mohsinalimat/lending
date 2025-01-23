@@ -323,7 +323,7 @@ def make_loan_demand_for_demand_loans(
 		filters["name"] = loan
 
 	open_loans = frappe.db.get_all("Loan", filters=filters, pluck="name")
-
+	# frappe.throw(f"{open_loans}")
 	for loan in open_loans:
 		make_loan_demand_for_demand_loan(add_days(posting_date, -1), loan)
 

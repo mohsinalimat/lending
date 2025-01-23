@@ -2048,8 +2048,11 @@ def process_amount_for_loan(
 	unbooked_interest, accrued_interest = get_unbooked_interest(
 		loan.name, posting_date, loan_disbursement=loan_disbursement, last_demand_date=last_demand_date
 	)
-
-	if getdate(posting_date) > getdate(latest_accrual_date) or is_backdated:
+	if (
+		getdate(posting_date) > getdate(latest_accrual_date)
+		or is_backdated
+		or latest_accrual_date == None
+	):
 		amounts["unaccrued_interest"] = calculate_accrual_amount_for_loans(
 			loan,
 			posting_date=posting_date if payment_type == "Loan Closure" else add_days(posting_date, -1),
@@ -2353,6 +2356,8 @@ def get_latest_accrual_date(loan, posting_date, interest_type="Interest", loan_d
 		"MAX(posting_date)",
 	)
 
+	if latest_accrual_date == None:
+		latest_accrual_date = frappe.db.get_value("Loan", loan, ["posting_date"])
 	return latest_accrual_date
 
 
