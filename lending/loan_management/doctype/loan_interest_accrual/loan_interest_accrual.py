@@ -458,7 +458,7 @@ def calculate_penal_interest_for_loans(
 		)
 
 	if flt(penal_interest_rate, precision) <= 0:
-		return
+		return 0
 
 	demands = get_unpaid_demands(loan.name, posting_date, emi_wise=True)
 
