@@ -1517,6 +1517,7 @@ class LoanRepayment(AccountsController):
 					self.payment_account,
 					self.total_interest_paid,
 					gle_map,
+					is_waiver_entry=True,
 				)
 
 		additional_interest = sum(
@@ -1538,6 +1539,7 @@ class LoanRepayment(AccountsController):
 					self.payment_account,
 					total_penalty_paid,
 					gle_map,
+					is_waiver_entry=True,
 				)
 
 		if flt(additional_interest, precision) > 0:
@@ -1557,6 +1559,7 @@ class LoanRepayment(AccountsController):
 					account_details.additional_interest_waiver,
 					additional_interest,
 					gle_map,
+					is_waiver_entry=True,
 				)
 
 		if flt(self.excess_amount, precision):
@@ -1642,6 +1645,7 @@ class LoanRepayment(AccountsController):
 		gl_entries,
 		against_voucher_type=None,
 		against_voucher=None,
+		is_waiver_entry=False,
 	):
 		remarks = self.get_remarks()
 
@@ -1677,8 +1681,8 @@ class LoanRepayment(AccountsController):
 			self.get_gl_dict(
 				{
 					"account": against_account,
-					"party_type": self.applicant_type,
-					"party": self.applicant,
+					"party_type": self.applicant_type if not is_waiver_entry else "",
+					"party": self.applicant if not is_waiver_entry else "",
 					"against": account,
 					"credit": amount,
 					"credit_in_account_currency": amount,
