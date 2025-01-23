@@ -11,6 +11,9 @@ def execute():
 	if not loan_products_created:
 		return
 
+	if not frappe.db.has_column("Loan Product", "loan_name"):
+		return
+
 	rename_field("Loan Product", "loan_name", "product_name", validate=False)
 
 	for loan_product in frappe.db.get_all("Loan Product", fields=["name", "product_name"]):
