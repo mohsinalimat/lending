@@ -93,6 +93,9 @@ class TestLoan(unittest.TestCase):
 				repayment_schedule_type=loan_product[3],
 			)
 
+			if loan_product[0] == "Term Loan Product 4":
+				add_or_update_loan_charges("Term Loan Product 4")
+
 		for loan_product in loc_loans:
 			create_loan_product(
 				loan_product[0],
@@ -1465,6 +1468,52 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
+	def test_excess_amount_for_waiver(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			100000,
+			"Repay Over Number of Periods",
+			6,
+			"Customer",
+			"2024-07-15",
+			"2024-06-25",
+			10,
+		)
+		loan.submit()
+
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-06-25", repayment_start_date="2024-07-15"
+		)
+		process_daily_loan_demands(posting_date="2025-01-05", loan=loan.name)
+
+		sales_invoice = frappe.get_doc(
+			{
+				"doctype": "Sales Invoice",
+				"customer": "_Test Customer 1",
+				"company": "_Test Company",
+				"loan": loan.name,
+				"posting_date": "2025-01-15",
+				"posting_time": "00:06:10",
+				"set_posting_time": 1,
+				"items": [{"item_code": "Processing Fee", "qty": 1, "rate": 5000}],
+			}
+		)
+		sales_invoice.submit()
+
+		repayment_entry = create_repayment_entry(loan.name, "2025-01-16", 106684.69)
+		repayment_entry.submit()
+
+		loan_adjustment = frappe.get_doc(
+			{
+				"doctype": "Loan Adjustment",
+				"loan": loan.name,
+				"posting_date": "2025-01-16",
+				"adjustments": [{"loan_repayment_type": "Charges Waiver", "amount": 4500}],
+			}
+		)
+		loan_adjustment.submit()
+
 	def test_dpd_calculation(self):
 		loan = create_loan(
 			"_Test Customer 1",
@@ -1735,6 +1784,30 @@ def create_loan_accounts():
 		"Balance Sheet",
 	)
 
+	create_account(
+		"Processing Fee Income Account",
+		"Direct Income - _TC",
+		"Income",
+		"Income Account",
+		"Profit and Loss",
+	)
+
+	create_account(
+		"Processing Fee Receivable Account",
+		"Loans and Advances (Assets) - _TC",
+		"Asset",
+		"Receivable",
+		"Balance Sheet",
+	)
+
+	create_account(
+		"Processing Fee Waiver Account",
+		"Direct Expenses - _TC",
+		"Expense",
+		"Expense Account",
+		"Profit and Loss",
+	)
+
 
 def create_account(account_name, parent_account, root_type, account_type, report_type, is_group=0):
 	if not frappe.db.exists("Account", {"account_name": account_name}):
@@ -1811,6 +1884,7 @@ def create_loan_product(
 				"repayment_method": repayment_method,
 				"repayment_periods": repayment_periods,
 				"write_off_amount": 100,
+				"excess_amount_acceptance_limit": 100,
 				"days_past_due_threshold_for_npa": days_past_due_threshold_for_npa,
 				"min_days_bw_disbursement_first_repayment": min_days_bw_disbursement_first_repayment,
 				"min_auto_closure_tolerance_amount": -100,
@@ -1826,6 +1900,36 @@ def create_loan_product(
 		loan_product.insert()
 
 		return loan_product
+
+
+def add_or_update_loan_charges(product_name):
+	loan_product = frappe.get_doc("Loan Product", product_name)
+
+	charge_type = "Processing Fee"
+
+	if not frappe.db.exists("Item", charge_type):
+		frappe.get_doc(
+			{
+				"doctype": "Item",
+				"item_code": charge_type,
+				"item_group": "Services",
+				"is_stock_item": 0,
+				"income_account": "Processing Fee Income Account - _TC",
+			}
+		).insert()
+
+	loan_product.loan_charges = []
+
+	loan_product.append(
+		"loan_charges",
+		{
+			"charge_type": charge_type,
+			"income_account": "Processing Fee Income Account - _TC",
+			"receivable_account": "Processing Fee Receivable Account - _TC",
+			"waiver_account": "Processing Fee Waiver Account - _TC",
+		},
+	)
+	loan_product.save()
 
 
 def create_loan_security_type():

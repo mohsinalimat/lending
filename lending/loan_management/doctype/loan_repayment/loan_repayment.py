@@ -568,7 +568,7 @@ class LoanRepayment(AccountsController):
 			elif not self.repay_from_salary and self.payroll_payable_account:
 				self.repay_from_salary = 1
 
-		if self.repayment_type in ("Full Settlement", "Write Off Settlement"):
+		if self.repayment_type in ("Full Settlement", "Write Off Settlement", "Charges Waiver"):
 			self.total_charges_payable = amounts.get("total_charges_payable")
 
 	def validate_disbursement_link(self):
@@ -618,7 +618,7 @@ class LoanRepayment(AccountsController):
 	def validate_repayment_type(self):
 		loan_status = frappe.db.get_value("Loan", self.against_loan, "status")
 
-		if loan_status == "Closed":
+		if loan_status == "Closed" and self.repayment_type != "Charges Waiver":
 			frappe.throw(_("Repayment cannot be made for closed loan"))
 
 		if loan_status == "Written Off":
@@ -882,7 +882,7 @@ class LoanRepayment(AccountsController):
 					"loan": self.against_loan,
 					"docstatus": 1,
 					"outstanding_amount": (">", 0),
-					"posting_date": ("<=", self.posting_date),
+					"demand_date": ("<=", self.posting_date),
 				},
 				"sum(outstanding_amount)",
 			)
@@ -896,10 +896,12 @@ class LoanRepayment(AccountsController):
 			and (total_payable - self.amount_paid <= shortfall_amount)
 		):
 			auto_close = True
+			self.set_excess_amount_for_waiver(total_payable)
 
 		excess_amount = self.principal_amount_paid - self.pending_principal_amount
 		if excess_amount > 0 and excess_amount <= excess_amount_limit:
 			auto_close = True
+			self.set_excess_amount_for_waiver(total_payable)
 
 		if (
 			self.principal_amount_paid >= self.pending_principal_amount
@@ -908,8 +910,13 @@ class LoanRepayment(AccountsController):
 			and (total_payable - self.amount_paid) <= flt(auto_write_off_amount)
 		):
 			auto_close = True
+			self.set_excess_amount_for_waiver(total_payable)
 
 		return auto_close
+
+	def set_excess_amount_for_waiver(self, total_payable):
+		if self.repayment_type in ("Interest Waiver", "Penalty Waiver", "Charges Waiver"):
+			self.excess_amount = self.amount_paid - total_payable
 
 	def mark_as_unpaid(self):
 		if self.repayment_type in (
@@ -1245,8 +1252,12 @@ class LoanRepayment(AccountsController):
 			self.principal_amount_paid = flt(self.principal_amount_paid, precision)
 
 		if (
-			self.auto_close_loan() or self.principal_amount_paid - self.pending_principal_amount > 0
-		) and self.repayment_type not in ("Write Off Settlement", "Write Off Recovery"):
+			self.auto_close_loan() or flt(self.principal_amount_paid - self.pending_principal_amount) > 0
+		) and self.repayment_type not in (
+			"Write Off Settlement",
+			"Write Off Recovery",
+			"Charges Waiver",
+		):
 			self.excess_amount = self.principal_amount_paid - self.pending_principal_amount
 			self.principal_amount_paid -= self.excess_amount
 		elif self.repayment_type == "Write Off Settlement" and (
@@ -1463,7 +1474,14 @@ class LoanRepayment(AccountsController):
 			return flt(self.loan_partner_share_percentage * paid_amount)
 
 	def make_gl_entries(self, cancel=0, adv_adj=0):
+		from lending.loan_management.doctype.loan_restructure.loan_restructure import (
+			create_loan_repayment,
+		)
+
 		if self.repayment_type == "Charges Waiver":
+			payable_charges = self.total_charges_payable - self.total_charges_paid
+			if self.excess_amount < 0 and payable_charges > 0:
+				create_loan_repayment(self.against_loan, self.posting_date, "Charges Waiver", payable_charges)
 			return
 
 		if cancel:
