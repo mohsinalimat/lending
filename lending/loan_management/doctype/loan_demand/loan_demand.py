@@ -308,6 +308,7 @@ def make_loan_demand_for_demand_loans(
 	posting_date,
 	loan_product=None,
 	loan=None,
+	process_loan_demand=None,
 ):
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	filters = {
@@ -323,12 +324,12 @@ def make_loan_demand_for_demand_loans(
 		filters["name"] = loan
 
 	open_loans = frappe.db.get_all("Loan", filters=filters, pluck="name")
-	# frappe.throw(f"{open_loans}")
+
 	for loan in open_loans:
-		make_loan_demand_for_demand_loan(add_days(posting_date, -1), loan)
+		make_loan_demand_for_demand_loan(add_days(posting_date, -1), loan, process_loan_demand)
 
 
-def make_loan_demand_for_demand_loan(posting_date, loan):
+def make_loan_demand_for_demand_loan(posting_date, loan, process_loan_demand):
 	# get last demand date
 	loan_demands = frappe.qb.DocType("Loan Demand")
 	query = (
@@ -362,7 +363,15 @@ def make_loan_demand_for_demand_loan(posting_date, loan):
 		total_pending_interest = total_pending_interest[0][0]
 	else:
 		total_pending_interest = 0
-	create_loan_demand(loan, posting_date, "Normal", "Interest", total_pending_interest)
+
+	create_loan_demand(
+		loan,
+		posting_date,
+		"Normal",
+		"Interest",
+		total_pending_interest,
+		process_loan_demand=process_loan_demand,
+	)
 
 
 def create_loan_demand(

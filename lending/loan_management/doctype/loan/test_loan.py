@@ -549,8 +549,6 @@ class TestLoan(IntegrationTestCase):
 
 		no_of_days = date_diff(last_date, first_date) + 1
 
-		no_of_days += 5
-
 		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
 			days_in_year(get_datetime(first_date).year) * 100
 		)
@@ -559,10 +557,9 @@ class TestLoan(IntegrationTestCase):
 		process_loan_interest_accrual_for_loans(posting_date=last_date, loan=loan.name)
 		process_daily_loan_demands(posting_date=last_date, loan=loan.name)
 
-		# breakpoint()
 		repayment_entry = create_repayment_entry(
 			loan.name,
-			add_days(last_date, 5),
+			last_date,
 			flt(loan.loan_amount + accrued_interest_amount),
 		)
 		repayment_entry.submit()

@@ -29,6 +29,7 @@ class ProcessLoanDemand(Document):
 		make_loan_demand_for_demand_loans(
 			self.posting_date,
 			loan=self.loan,
+			process_loan_demand=self.name,
 		)
 
 

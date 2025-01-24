@@ -1366,21 +1366,24 @@ class LoanRepayment(AccountsController):
 		for d in allocation_order_doc.get("components"):
 			if d.demand_type == "EMI (Principal + Interest)" and pending_amount > 0:
 				pending_amount = self.adjust_component(pending_amount, "BPI", demands)
-				pending_amount = self.adjust_component(pending_amount, "EMI", demands)
+				if self.is_term_loan:
+					pending_amount = self.adjust_component(pending_amount, "EMI", demands)
 			if d.demand_type == "Principal" and pending_amount > 0:
 				pending_amount = self.adjust_component(pending_amount, "Normal", demands)
-				pending_amount = self.adjust_component(
-					pending_amount, "EMI", demands, demand_subtype="Principal"
-				)
-				if self.repayment_type in (
-					"Partial Settlement",
-					"Full Settlement",
-					"Write Off Recovery",
-					"Write Off Settlement",
-					"Principal Adjustment",
-				) or (
-					status == "Settled"
-					and self.repayment_type not in ("Interest Waiver", "Penalty Waiver", "Charges Waiver")
+				if self.is_term_loan:
+					pending_amount = self.adjust_component(
+						pending_amount, "EMI", demands, demand_subtype="Principal"
+					)
+				if (
+					self.repayment_type
+					in (
+						"Partial Settlement",
+						"Full Settlement",
+						"Write Off Recovery",
+						"Write Off Settlement",
+						"Principal Adjustment",
+					)
+					or status == "Settled"
 				):
 					principal_amount_paid = sum(
 						d.paid_amount for d in self.get("repayment_details") if d.demand_subtype == "Principal"
@@ -1393,8 +1396,10 @@ class LoanRepayment(AccountsController):
 						self.principal_amount_paid += pending_amount
 						pending_amount = 0
 
-			if d.demand_type == "Interest" and pending_amount > 0:
-				pending_amount = self.adjust_component(pending_amount, "Normal", demands)
+			if d.demand_type == "Normal" and pending_amount > 0:
+				pending_amount = self.adjust_component(
+					pending_amount, "Normal", demands, demand_subtype="Interest"
+				)
 				pending_amount = self.adjust_component(
 					pending_amount, "EMI", demands, demand_subtype="Interest"
 				)
