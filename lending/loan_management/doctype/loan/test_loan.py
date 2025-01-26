@@ -1,10 +1,9 @@
 # Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import unittest
-from datetime import datetime
 
 import frappe
+from frappe.tests import IntegrationTestCase
 from frappe.utils import (
 	add_days,
 	add_months,
@@ -51,7 +50,7 @@ from lending.loan_management.doctype.process_loan_security_shortfall.process_loa
 )
 
 
-class TestLoan(unittest.TestCase):
+class TestLoan(IntegrationTestCase):
 	def setUp(self):
 		set_loan_settings_in_company()
 		create_loan_accounts()
