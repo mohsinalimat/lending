@@ -19,6 +19,8 @@ audit_trail_doctypes = [
 
 voucher_subtypes = "lending.loan_management.doctype.loan.loan.get_voucher_subtypes"
 
+before_tests = "lending.tests.test_utils.before_tests"
+
 # Includes in <head>
 # ------------------
 
