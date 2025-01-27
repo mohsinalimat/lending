@@ -92,9 +92,7 @@ class TestLoan(unittest.TestCase):
 				loan_product[2],
 				repayment_schedule_type=loan_product[3],
 			)
-
-			if loan_product[0] == "Term Loan Product 4":
-				add_or_update_loan_charges("Term Loan Product 4")
+			add_or_update_loan_charges(loan_product[0])
 
 		for loan_product in loc_loans:
 			create_loan_product(
@@ -1509,10 +1507,64 @@ class TestLoan(unittest.TestCase):
 				"doctype": "Loan Adjustment",
 				"loan": loan.name,
 				"posting_date": "2025-01-16",
-				"adjustments": [{"loan_repayment_type": "Charges Waiver", "amount": 4500}],
+				"adjustments": [{"loan_repayment_type": "Charges Waiver", "amount": 4900}],
 			}
 		)
 		loan_adjustment.submit()
+
+		credit_notes = frappe.get_all(
+			"Sales Invoice",
+			filters={"loan": loan.name, "is_return": 1, "status": "Return"},
+			fields=["name", "grand_total", "return_against"],
+		)
+
+		original_invoice_total = frappe.db.get_value("Sales Invoice", sales_invoice.name, "grand_total")
+
+		total_credit_note_sum = sum(abs(flt(cr["grand_total"])) for cr in credit_notes)
+
+		if total_credit_note_sum < original_invoice_total:
+			missing_amount = original_invoice_total - total_credit_note_sum
+			self.assertTrue(
+				total_credit_note_sum >= original_invoice_total,
+				f"Credit notes missing amount: {missing_amount}.",
+			)
+
+		outstanding_demand = frappe.db.get_value(
+			"Loan Demand", {"loan": loan.name, "outstanding_amount": (">", 0)}, "outstanding_amount"
+		)
+		self.assertEqual(
+			flt(outstanding_demand), 0, "There are still outstanding amounts in the loan demand."
+		)
+
+	def test_interest_penalty_principal_waiver(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			100000,
+			"Repay Over Number of Periods",
+			6,
+			"Customer",
+			"2024-07-15",
+			"2024-06-25",
+			10,
+		)
+		loan.submit()
+
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-06-25", repayment_start_date="2024-07-15"
+		)
+		process_daily_loan_demands(posting_date="2025-01-05", loan=loan.name)
+
+		for adjustment_type in ["Interest Waiver", "Penalty Waiver", "Principal Waiver"]:
+			loan_adjustment = frappe.get_doc(
+				{
+					"doctype": "Loan Adjustment",
+					"loan": loan.name,
+					"posting_date": "2025-01-16",
+					"adjustments": [{"loan_repayment_type": adjustment_type, "amount": 1000}],
+				}
+			)
+			loan_adjustment.submit()
 
 	def test_dpd_calculation(self):
 		loan = create_loan(
