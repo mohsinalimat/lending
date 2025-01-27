@@ -882,10 +882,10 @@ class LoanRepayment(AccountsController):
 					"loan": self.against_loan,
 					"docstatus": 1,
 					"outstanding_amount": (">", 0),
-					"posting_date": ("<=", self.posting_date),
+					"demand_date": ("<=", self.posting_date),
 				},
 				"sum(outstanding_amount)",
-			)
+			) or 0
 		else:
 			total_payable = self.payable_amount
 
@@ -893,7 +893,7 @@ class LoanRepayment(AccountsController):
 			auto_write_off_amount
 			and shortfall_amount > 0
 			and shortfall_amount <= auto_write_off_amount
-			and (total_payable - self.amount_paid <= shortfall_amount)
+			and flt(total_payable - self.amount_paid) <= flt(shortfall_amount)
 		):
 			auto_close = True
 
@@ -905,7 +905,7 @@ class LoanRepayment(AccountsController):
 			self.principal_amount_paid >= self.pending_principal_amount
 			and not flt(shortfall_amount)
 			and flt(self.excess_amount) <= flt(excess_amount_limit)
-			and (total_payable - self.amount_paid) <= flt(auto_write_off_amount)
+			and flt(total_payable - self.amount_paid) <= flt(auto_write_off_amount)
 		):
 			auto_close = True
 
