@@ -208,20 +208,26 @@ class TestLoan(IntegrationTestCase):
 			self.assertEqual(flt(schedule[idx].balance_loan_amount, 0), balance_loan_amount)
 
 	def test_loan_with_fixed_amount_per_period(self):
+		disbursement_date = "2020-10-01"
 		loan = create_loan(
 			self.applicant1,
 			"Personal Loan",
 			280000,
 			"Repay Over Number of Periods",
 			repayment_periods=20,
-			repayment_start_date=add_months(nowdate(), 1),
+			repayment_start_date=add_months(disbursement_date, 1),
 		)
 
 		loan.repayment_method = "Repay Fixed Amount per Period"
 		loan.monthly_repayment_amount = 14000
 		loan.submit()
 
-		make_loan_disbursement_entry(loan.name, 280000, repayment_start_date=add_months(nowdate(), 1))
+		make_loan_disbursement_entry(
+			loan.name,
+			280000,
+			repayment_start_date=add_months(disbursement_date, 1),
+			disbursement_date=disbursement_date,
+		)
 
 		loan_repayment_schedule = frappe.get_doc(
 			"Loan Repayment Schedule", {"loan": loan.name, "docstatus": 1, "status": "Active"}
