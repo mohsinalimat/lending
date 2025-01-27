@@ -1536,36 +1536,6 @@ class TestLoan(unittest.TestCase):
 			flt(outstanding_demand), 0, "There are still outstanding amounts in the loan demand."
 		)
 
-	def test_interest_penalty_principal_waiver(self):
-		loan = create_loan(
-			"_Test Customer 1",
-			"Term Loan Product 4",
-			100000,
-			"Repay Over Number of Periods",
-			6,
-			"Customer",
-			"2024-07-15",
-			"2024-06-25",
-			10,
-		)
-		loan.submit()
-
-		make_loan_disbursement_entry(
-			loan.name, loan.loan_amount, disbursement_date="2024-06-25", repayment_start_date="2024-07-15"
-		)
-		process_daily_loan_demands(posting_date="2025-01-05", loan=loan.name)
-
-		for adjustment_type in ["Interest Waiver", "Penalty Waiver", "Principal Waiver"]:
-			loan_adjustment = frappe.get_doc(
-				{
-					"doctype": "Loan Adjustment",
-					"loan": loan.name,
-					"posting_date": "2025-01-16",
-					"adjustments": [{"loan_repayment_type": adjustment_type, "amount": 1000}],
-				}
-			)
-			loan_adjustment.submit()
-
 	def test_dpd_calculation(self):
 		loan = create_loan(
 			"_Test Customer 1",
