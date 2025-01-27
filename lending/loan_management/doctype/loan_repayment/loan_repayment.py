@@ -885,7 +885,7 @@ class LoanRepayment(AccountsController):
 					"demand_date": ("<=", self.posting_date),
 				},
 				"sum(outstanding_amount)",
-			)
+			) or 0
 		else:
 			total_payable = self.payable_amount
 
