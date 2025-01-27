@@ -143,6 +143,10 @@ class TestLoan(IntegrationTestCase):
 			"Loan Account - _TC",
 			"Interest Income Account - _TC",
 			"Penalty Income Account - _TC",
+			collection_offset_sequence_for_standard_asset="Test Demand Loan Loan Demand Offset Order",
+			collection_offset_sequence_for_sub_standard_asset=None,
+			collection_offset_sequence_for_written_off_asset=None,
+			collection_offset_sequence_for_settlement_collection=None,
 		)
 
 		create_loan_security_type()
@@ -817,11 +821,14 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(loan.loan_amount, 1000000)
 		repayment_date = add_days("2019-10-30", 5)
 		no_of_days = date_diff(repayment_date, add_days("2019-10-01", 1))
+		# no_of_days = 34
 
 		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
 			days_in_year(get_datetime("2019-10-01").year) * 100
 		)
 
+		process_daily_loan_demands(posting_date="2019-10-01", loan=loan.name)
+		process_daily_loan_demands(posting_date="2019-11-01", loan=loan.name)
 		# repay 50 less so that it can be automatically written off
 		repayment_entry = create_repayment_entry(
 			loan.name,
@@ -949,7 +956,7 @@ class TestLoan(IntegrationTestCase):
 			"Company",
 			"_Test Company",
 			"collection_offset_sequence_for_standard_asset",
-			"Test Standard Loan Demand Offset Order",
+			"Test EMI Based Standard Loan Demand Offset Order",
 		)
 
 		loan = create_loan(
@@ -1026,7 +1033,7 @@ class TestLoan(IntegrationTestCase):
 			"Company",
 			"_Test Company",
 			"collection_offset_sequence_for_standard_asset",
-			"Test Standard Loan Demand Offset Order",
+			"Test EMI Based Standard Loan Demand Offset Order",
 		)
 
 		loan = create_loan(
@@ -1065,7 +1072,7 @@ class TestLoan(IntegrationTestCase):
 			"Company",
 			"_Test Company",
 			"collection_offset_sequence_for_standard_asset",
-			"Test Standard Loan Demand Offset Order",
+			"Test EMI Based Standard Loan Demand Offset Order",
 		)
 
 		loan = create_loan(
@@ -1213,7 +1220,7 @@ class TestLoan(IntegrationTestCase):
 			"Company",
 			"_Test Company",
 			"collection_offset_sequence_for_standard_asset",
-			"Test Standard Loan Demand Offset Order",
+			"Test EMI Based Standard Loan Demand Offset Order",
 		)
 
 		loan = create_loan(
@@ -1249,7 +1256,7 @@ class TestLoan(IntegrationTestCase):
 			"Company",
 			"_Test Company",
 			"collection_offset_sequence_for_standard_asset",
-			"Test Standard Loan Demand Offset Order",
+			"Test EMI Based Standard Loan Demand Offset Order",
 		)
 
 		loan = create_loan(
@@ -1779,6 +1786,10 @@ def create_loan_product(
 	penalty_accrued_account="Penalty Accrued Account - _TC",
 	broken_period_interest_recovery_account="Broken Period Interest - _TC",
 	cyclic_day_of_the_month=5,
+	collection_offset_sequence_for_standard_asset=None,
+	collection_offset_sequence_for_sub_standard_asset=None,
+	collection_offset_sequence_for_written_off_asset=None,
+	collection_offset_sequence_for_settlement_collection=None,
 ):
 
 	if not frappe.db.exists("Loan Product", product_code):
@@ -1815,6 +1826,10 @@ def create_loan_product(
 				"min_days_bw_disbursement_first_repayment": min_days_bw_disbursement_first_repayment,
 				"min_auto_closure_tolerance_amount": -100,
 				"max_auto_closure_tolerance_amount": 100,
+				"collection_offset_sequence_for_standard_asset": collection_offset_sequence_for_standard_asset,
+				"collection_offset_sequence_for_sub_standard_asset": collection_offset_sequence_for_sub_standard_asset,
+				"collection_offset_sequence_for_written_off_asset": collection_offset_sequence_for_written_off_asset,
+				"collection_offset_sequence_for_settlement_collection": collection_offset_sequence_for_settlement_collection,
 			}
 		)
 
@@ -2067,9 +2082,12 @@ def setup_loan_demand_offset_order(company=None):
 	if not company:
 		company = "_Test Company"
 
-	create_demand_offset_order("Test Loan Demand Offset Order", ["Penalty", "Interest", "Principal"])
 	create_demand_offset_order(
-		"Test Standard Loan Demand Offset Order", ["EMI (Principal + Interest)", "Penalty", "Charges"]
+		"Test Demand Loan Loan Demand Offset Order", ["Penalty", "Interest", "Principle"]
+	)
+	create_demand_offset_order(
+		"Test EMI Based Standard Loan Demand Offset Order",
+		["EMI (Principal + Interest)", "Penalty", "Charges"],
 	)
 	create_demand_offset_order(
 		"Test Standard Loan Demand Offset Order 1", ["Penalty", "Interest", "Charges"]
@@ -2077,16 +2095,24 @@ def setup_loan_demand_offset_order(company=None):
 
 	doc = frappe.get_doc("Company", company)
 	if not doc.get("collection_offset_sequence_for_standard_asset"):
-		doc.collection_offset_sequence_for_standard_asset = "Test Standard Loan Demand Offset Order"
+		doc.collection_offset_sequence_for_standard_asset = (
+			"Test EMI Based Standard Loan Demand Offset Order"
+		)
 
 	if not doc.get("collection_offset_sequence_for_sub_standard_asset"):
-		doc.collection_offset_sequence_for_non_standard_asset = "Test Loan Demand Offset Order"
+		doc.collection_offset_sequence_for_non_standard_asset = (
+			"Test Demand Loan Loan Demand Offset Order"
+		)
 
 	if not doc.get("collection_offset_sequence_for_written_off_asset"):
-		doc.collection_offset_sequence_for_written_off_asset = "Test Loan Demand Offset Order"
+		doc.collection_offset_sequence_for_written_off_asset = (
+			"Test Demand Loan Loan Demand Offset Order"
+		)
 
 	if not doc.get("collection_offset_sequence_for_settlement_collection"):
-		doc.collection_offset_sequence_for_settlement_collection = "Test Loan Demand Offset Order"
+		doc.collection_offset_sequence_for_settlement_collection = (
+			"Test Demand Loan Loan Demand Offset Order"
+		)
 
 	doc.save()
 

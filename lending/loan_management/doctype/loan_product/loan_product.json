@@ -28,6 +28,10 @@
   "repayment_date_on",
   "days_past_due_threshold_for_npa",
   "description",
+  "collection_offset_sequence_for_standard_asset",
+  "collection_offset_sequence_for_sub_standard_asset",
+  "collection_offset_sequence_for_written_off_asset",
+  "collection_offset_sequence_for_settlement_collection",
   "account_details_section",
   "disbursement_account",
   "payment_account",
@@ -447,11 +451,35 @@
    "fieldname": "validate_normal_repayment",
    "fieldtype": "Check",
    "label": "Validate Normal Repayment"
+  },
+  {
+   "fieldname": "collection_offset_sequence_for_standard_asset",
+   "fieldtype": "Link",
+   "label": "Collection Offset Sequence for Standard Asset",
+   "options": "Loan Demand Offset Order"
+  },
+  {
+   "fieldname": "collection_offset_sequence_for_sub_standard_asset",
+   "fieldtype": "Link",
+   "label": "Collection Offset Sequence for Sub Standard Asset",
+   "options": "Loan Demand Offset Order"
+  },
+  {
+   "fieldname": "collection_offset_sequence_for_written_off_asset",
+   "fieldtype": "Link",
+   "label": "Collection Offset Sequence for Written Off Asset",
+   "options": "Loan Demand Offset Order"
+  },
+  {
+   "fieldname": "collection_offset_sequence_for_settlement_collection",
+   "fieldtype": "Link",
+   "label": "Collection Offset Sequence for Settlement Collection",
+   "options": "Loan Demand Offset Order"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-06 16:38:24.416251",
+ "modified": "2025-01-24 02:28:02.695310",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Product",
