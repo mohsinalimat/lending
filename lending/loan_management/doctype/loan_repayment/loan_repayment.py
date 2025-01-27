@@ -882,7 +882,7 @@ class LoanRepayment(AccountsController):
 					"loan": self.against_loan,
 					"docstatus": 1,
 					"outstanding_amount": (">", 0),
-					"posting_date": ("<=", self.posting_date),
+					"demand_date": ("<=", self.posting_date),
 				},
 				"sum(outstanding_amount)",
 			)
