@@ -500,6 +500,10 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(repayment_entry.principal_amount_paid, 78303.00)
 
 	def test_security_shortfall(self):
+		frappe.db.sql(
+			"""UPDATE `tabLoan Security Price` SET loan_security_price = 250
+			where loan_security='Test Security 2'"""
+		)
 		pledges = [
 			{
 				"loan_security": "Test Security 2",
@@ -851,44 +855,6 @@ class TestLoan(IntegrationTestCase):
 
 		self.assertEqual(loan.status, "Partially Disbursed")
 		create_repayment_entry(loan.name, add_days("2019-10-30", 5), flt(loan.loan_amount / 3))
-
-	# def test_loan_auto_write_off_limit(self):
-	# 	loan = create_secured_demand_loan(self.applicant2)
-
-	# 	self.assertEqual(loan.loan_amount, 1000000)
-
-	# 	repayment_date = add_days("2019-10-30", 5)
-	# 	no_of_days = date_diff(repayment_date, add_days("2019-10-01", 1))
-
-	# 	accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
-	# 		days_in_year(get_datetime("2019-10-01").year) * 100
-	# 	)
-	# 	# repay 100 less so that it can be automatically written off
-	# 	repayment_entry = create_repayment_entry(
-	# 		loan.name,
-	# 		repayment_date,
-	# 		flt(loan.loan_amount + accrued_interest_amount - 100),
-	# 	)
-
-	# 	repayment_entry.submit()
-
-	# 	amount = frappe.db.get_value(
-	# 		"Loan Demand",
-	# 		{"loan": loan.name, "demand_type": "Normal", "demand_subtype": "Interest"},
-	# 		["sum(demand_amount)"],
-	# 	)
-
-	# 	self.assertEqual(flt(amount, 0), flt(accrued_interest_amount, 0))
-	# 	self.assertEqual(flt(repayment_entry.penalty_amount, 5), 0)
-
-	# 	amounts = calculate_amounts(loan.name, repayment_date)
-	# 	self.assertEqual(flt(amounts["pending_principal_amount"], 0), 100)
-
-	# 	we = make_loan_write_off(loan.name, amount=amounts["pending_principal_amount"])
-	# 	we.submit()
-
-	# 	amounts = calculate_amounts(loan.name, repayment_date)
-	# 	self.assertEqual(flt(amounts["pending_principal_amount"], 0), 0)
 
 	def test_term_loan_schedule_types(self):
 		def _create_loan_for_schedule(loan_product, repayment_method, monthly_repayment_amount=None):
