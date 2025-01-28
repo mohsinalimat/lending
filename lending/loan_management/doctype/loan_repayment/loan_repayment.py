@@ -399,9 +399,11 @@ class LoanRepayment(AccountsController):
 					interest_paid, updated_entries = self.allocate_interest_amount(
 						interest_paid, repayment_details
 					)
-					self.allocate_principal_amount_for_term_loans(
+					interest_paid, updated_entries = self.allocate_principal_amount_for_term_loans(
 						interest_paid, repayment_details, updated_entries
 					)
+				if interest_paid > 0:
+					self.principal_amount_paid += interest_paid
 			elif self.repayment_type in ("Principal Adjustment", "Principal Capitalization"):
 				self.allocate_principal_amount_for_term_loans(interest_paid, repayment_details, {})
 			elif self.repayment_type in (
