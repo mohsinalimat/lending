@@ -205,12 +205,12 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(len(schedule), 20)
 
 		for idx, principal_amount, interest_amount, balance_loan_amount in [
-			[3, 13336, 1716, 227159],
-			[19, 14938, 107, 0],
-			[17, 14734, 318, 29784],
+			[3, 13392, 1660, 226979],
+			[19, 14875, 106, 0],
+			[17, 14745, 307, 29715],
 		]:
-			# self.assertEqual(flt(schedule[idx].principal_amount, 0), principal_amount)
-			# self.assertEqual(flt(schedule[idx].interest_amount, 0), interest_amount)
+			self.assertEqual(flt(schedule[idx].principal_amount, 0), principal_amount)
+			self.assertEqual(flt(schedule[idx].interest_amount, 0), interest_amount)
 			self.assertEqual(flt(schedule[idx].balance_loan_amount, 0), balance_loan_amount)
 
 	def test_loan_with_fixed_amount_per_period(self):
