@@ -767,8 +767,27 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(amounts["pending_principal_amount"], 0.0)
 
 	def test_penalty(self):
-		# To be rewritten
-		pass
+		loan = create_loan(
+			self.applicant1,
+			"Term Loan Product 4",
+			500000,
+			"Repay Over Number of Periods",
+			12,
+			repayment_start_date="2024-05-05",
+			posting_date="2024-04-01",
+			penalty_charges_rate=25,
+		)
+
+		loan.submit()
+
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-04-01", repayment_start_date="2024-05-05"
+		)
+		process_daily_loan_demands(posting_date="2024-07-07", loan=loan.name)
+		process_loan_interest_accrual_for_loans(posting_date="2024-07-07", loan=loan.name)
+
+		amounts = calculate_amounts(against_loan=loan.name, posting_date="2024-07-07")
+		self.assertEqual(flt(amounts["penalty_amount"], 2), 3059.70)
 		# loan, amounts = create_loan_scenario_for_penalty(self)
 		# # 30 days - grace period
 		# penalty_days = 30 - 4
@@ -1956,6 +1975,7 @@ def create_loan(
 	loan_partner=None,
 	moratorium_tenure=None,
 	moratorium_type=None,
+	penalty_charges_rate=None,
 ):
 
 	loan = frappe.get_doc(
@@ -1978,6 +1998,7 @@ def create_loan(
 			"loan_partner": loan_partner,
 			"moratorium_tenure": moratorium_tenure,
 			"moratorium_type": moratorium_type,
+			"penalty_charges_rate": penalty_charges_rate,
 		}
 	)
 
