@@ -147,7 +147,7 @@
    "label": "Is Term Loan"
   },
   {
-   "description": "Penalty Interest Rate is levied on the pending interest amount on a daily basis in case of delayed repayment ",
+   "description": "Penalty Interest Rate is levied on the pending amount on a daily basis in case of delayed repayment ",
    "fieldname": "penalty_interest_rate",
    "fieldtype": "Percent",
    "label": "Penalty Interest Rate (%)"
@@ -479,7 +479,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-24 02:28:02.695310",
+ "modified": "2025-01-27 06:47:08.669731",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Product",
