@@ -1333,15 +1333,27 @@ class TestLoan(IntegrationTestCase):
 
 		loan.submit()
 
-		make_loan_disbursement_entry(
+		disbursement = make_loan_disbursement_entry(
 			loan.name, loan.loan_amount, disbursement_date="2024-03-06", repayment_start_date="2024-04-05"
 		)
+
+		# Test Limit Update
+		loan.load_from_db()
+		self.assertEqual(loan.utilized_limit_amount, 500000)
+		self.assertEqual(loan.available_limit_amount, 0)
+
 		process_daily_loan_demands(posting_date="2024-04-05", loan=loan.name)
 
 		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
 
-		repayment_entry = create_repayment_entry(loan.name, "2024-10-05", 47523)
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-10-05", 47523, loan_disbursement=disbursement.name
+		)
 		repayment_entry.submit()
+
+		loan.load_from_db()
+		self.assertEqual(loan.utilized_limit_amount, 500000 - repayment_entry.principal_amount_paid)
+		self.assertEqual(loan.available_limit_amount, repayment_entry.principal_amount_paid)
 
 	def test_shortfall_loan_close_limit(self):
 		loan = create_loan(
@@ -1902,13 +1914,16 @@ def create_loan_security_price(loan_security, loan_security_price, uom, from_dat
 		).insert(ignore_permissions=True)
 
 
-def create_repayment_entry(loan, posting_date, paid_amount, repayment_type="Normal Repayment"):
+def create_repayment_entry(
+	loan, posting_date, paid_amount, repayment_type="Normal Repayment", loan_disbursement=None
+):
 	lr = frappe.new_doc("Loan Repayment")
 	lr.against_loan = loan
 	lr.company = "_Test Company"
 	lr.posting_date = posting_date or nowdate()
 	lr.amount_paid = paid_amount
 	lr.repayment_type = repayment_type
+	lr.loan_disbursement = loan_disbursement
 	lr.insert(ignore_permissions=True)
 
 	return lr
