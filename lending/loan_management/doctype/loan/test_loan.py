@@ -1740,6 +1740,9 @@ def create_loan_product(
 	interest_accrued_account="Interest Accrued Account - _TC",
 	penalty_accrued_account="Penalty Accrued Account - _TC",
 	broken_period_interest_recovery_account="Broken Period Interest - _TC",
+	additional_interest_income="Additional Interest Income Account - _TC",
+	additional_interest_accrued="Additional Interest Accrued Account - _TC",
+	additional_interest_receivable="Additional Interest Receivable - _TC",
 	cyclic_day_of_the_month=5,
 	collection_offset_sequence_for_standard_asset=None,
 	collection_offset_sequence_for_sub_standard_asset=None,
@@ -1778,6 +1781,9 @@ def create_loan_product(
 	loan_product_doc.interest_accrued_account = interest_accrued_account
 	loan_product_doc.penalty_accrued_account = penalty_accrued_account
 	loan_product_doc.broken_period_interest_recovery_account = broken_period_interest_recovery_account
+	loan_product_doc.additional_interest_income = additional_interest_income
+	loan_product_doc.additional_interest_accrued = additional_interest_accrued
+	loan_product_doc.additional_interest_receivable = additional_interest_receivable
 	loan_product_doc.repayment_method = repayment_method
 	loan_product_doc.repayment_periods = repayment_periods
 	loan_product_doc.write_off_amount = 100
