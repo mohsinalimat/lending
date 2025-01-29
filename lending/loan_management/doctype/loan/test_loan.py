@@ -1747,55 +1747,67 @@ def create_loan_product(
 	collection_offset_sequence_for_settlement_collection=None,
 ):
 
-	if not frappe.db.exists("Loan Product", product_code):
-		loan_product = frappe.get_doc(
-			{
-				"doctype": "Loan Product",
-				"company": "_Test Company",
-				"product_code": product_code,
-				"product_name": product_name,
-				"is_term_loan": is_term_loan,
-				"repayment_schedule_type": repayment_schedule_type,
-				"cyclic_day_of_the_month": cyclic_day_of_the_month,
-				"maximum_loan_amount": maximum_loan_amount,
-				"rate_of_interest": rate_of_interest,
-				"penalty_interest_rate": penalty_interest_rate,
-				"grace_period_in_days": grace_period_in_days,
-				"disbursement_account": disbursement_account,
-				"payment_account": payment_account,
-				"loan_account": loan_account,
-				"interest_income_account": interest_income_account,
-				"penalty_income_account": penalty_income_account,
-				"interest_receivable_account": interest_receivable_account,
-				"penalty_receivable_account": penalty_receivable_account,
-				"charges_receivable_account": charges_receivable_account,
-				"suspense_interest_income": suspense_interest_income,
-				"interest_waiver_account": interest_waiver_account,
-				"interest_accrued_account": interest_accrued_account,
-				"penalty_accrued_account": penalty_accrued_account,
-				"broken_period_interest_recovery_account": broken_period_interest_recovery_account,
-				"repayment_method": repayment_method,
-				"repayment_periods": repayment_periods,
-				"write_off_amount": 100,
-				"days_past_due_threshold_for_npa": days_past_due_threshold_for_npa,
-				"min_days_bw_disbursement_first_repayment": min_days_bw_disbursement_first_repayment,
-				"min_auto_closure_tolerance_amount": -100,
-				"max_auto_closure_tolerance_amount": 100,
-				"collection_offset_sequence_for_standard_asset": collection_offset_sequence_for_standard_asset,
-				"collection_offset_sequence_for_sub_standard_asset": collection_offset_sequence_for_sub_standard_asset,
-				"collection_offset_sequence_for_written_off_asset": collection_offset_sequence_for_written_off_asset,
-				"collection_offset_sequence_for_settlement_collection": collection_offset_sequence_for_settlement_collection,
-			}
-		)
+	loan_product = frappe.get_all("Loan Product", filters={"product_name": product_name}, limit=1)
 
-		if loan_product.is_term_loan:
-			loan_product.repayment_schedule_type = repayment_schedule_type
-			if loan_product.repayment_schedule_type != "Monthly as per repayment start date":
-				loan_product.repayment_date_on = repayment_date_on
+	if loan_product:
+		loan_product_doc = frappe.get_doc("Loan Product", loan_product[0].name)
+	else:
+		loan_product_doc = frappe.new_doc("Loan Product")
+		loan_product_doc.insert()
 
-		loan_product.insert()
+	loan_product_doc.company = "_Test Company"
+	loan_product_doc.product_code = product_code
+	loan_product_doc.product_name = product_name
+	loan_product_doc.is_term_loan = is_term_loan
+	loan_product_doc.repayment_schedule_type = repayment_schedule_type
+	loan_product_doc.cyclic_day_of_the_month = cyclic_day_of_the_month
+	loan_product_doc.maximum_loan_amount = maximum_loan_amount
+	loan_product_doc.rate_of_interest = rate_of_interest
+	loan_product_doc.penalty_interest_rate = penalty_interest_rate
+	loan_product_doc.grace_period_in_days = grace_period_in_days
+	loan_product_doc.disbursement_account = disbursement_account
+	loan_product_doc.payment_account = payment_account
+	loan_product_doc.loan_account = loan_account
+	loan_product_doc.interest_income_account = interest_income_account
+	loan_product_doc.penalty_income_account = penalty_income_account
+	loan_product_doc.interest_receivable_account = interest_receivable_account
+	loan_product_doc.penalty_receivable_account = penalty_receivable_account
+	loan_product_doc.charges_receivable_account = charges_receivable_account
+	loan_product_doc.suspense_interest_income = suspense_interest_income
+	loan_product_doc.interest_waiver_account = interest_waiver_account
+	loan_product_doc.interest_accrued_account = interest_accrued_account
+	loan_product_doc.penalty_accrued_account = penalty_accrued_account
+	loan_product_doc.broken_period_interest_recovery_account = broken_period_interest_recovery_account
+	loan_product_doc.repayment_method = repayment_method
+	loan_product_doc.repayment_periods = repayment_periods
+	loan_product_doc.write_off_amount = 100
+	loan_product_doc.days_past_due_threshold_for_npa = days_past_due_threshold_for_npa
+	loan_product_doc.min_days_bw_disbursement_first_repayment = (
+		min_days_bw_disbursement_first_repayment
+	)
+	loan_product_doc.min_auto_closure_tolerance_amount = -100
+	loan_product_doc.max_auto_closure_tolerance_amount = 100
+	loan_product_doc.collection_offset_sequence_for_standard_asset = (
+		collection_offset_sequence_for_standard_asset
+	)
+	loan_product_doc.collection_offset_sequence_for_sub_standard_asset = (
+		collection_offset_sequence_for_sub_standard_asset
+	)
+	loan_product_doc.collection_offset_sequence_for_written_off_asset = (
+		collection_offset_sequence_for_written_off_asset
+	)
+	loan_product_doc.collection_offset_sequence_for_settlement_collection = (
+		collection_offset_sequence_for_settlement_collection
+	)
 
-		return loan_product
+	if loan_product_doc.is_term_loan:
+		loan_product_doc.repayment_schedule_type = repayment_schedule_type
+		if loan_product_doc.repayment_schedule_type != "Monthly as per repayment start date":
+			loan_product_doc.repayment_date_on = repayment_date_on
+
+	loan_product_doc.save()
+
+	return loan_product_doc
 
 
 def create_loan_security_type():
