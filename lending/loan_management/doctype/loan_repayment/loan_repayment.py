@@ -139,7 +139,6 @@ class LoanRepayment(AccountsController):
 
 		self.update_paid_amounts()
 		self.update_demands()
-		self.update_limits()
 		self.update_security_deposit_amount()
 		update_installment_counts(self.against_loan, loan_disbursement=self.loan_disbursement)
 
@@ -463,7 +462,6 @@ class LoanRepayment(AccountsController):
 		self.check_future_accruals()
 		self.mark_as_unpaid()
 		self.update_demands(cancel=1)
-		self.update_limits(cancel=1)
 		self.update_security_deposit_amount(cancel=1)
 
 		frappe.db.set_value("Loan", self.against_loan, "days_past_due", self.days_past_due)
@@ -767,6 +765,7 @@ class LoanRepayment(AccountsController):
 			if not self.flags.from_repost:
 				self.reverse_future_accruals_and_demands(on_settlement_or_closure=True)
 
+		query = self.update_limits(query, loan)
 		query.run()
 
 		update_shortfall_status(self.against_loan, self.principal_amount_paid)
@@ -876,16 +875,19 @@ class LoanRepayment(AccountsController):
 		shortfall_amount = self.pending_principal_amount - self.principal_amount_paid
 
 		if self.repayment_type in ("Interest Waiver", "Penalty Waiver", "Charges Waiver"):
-			total_payable = frappe.db.get_value(
-				"Loan Demand",
-				{
-					"loan": self.against_loan,
-					"docstatus": 1,
-					"outstanding_amount": (">", 0),
-					"demand_date": ("<=", self.posting_date),
-				},
-				"sum(outstanding_amount)",
-			) or 0
+			total_payable = (
+				frappe.db.get_value(
+					"Loan Demand",
+					{
+						"loan": self.against_loan,
+						"docstatus": 1,
+						"outstanding_amount": (">", 0),
+						"demand_date": ("<=", self.posting_date),
+					},
+					"sum(outstanding_amount)",
+				)
+				or 0
+			)
 		else:
 			total_payable = self.payable_amount
 
@@ -962,6 +964,7 @@ class LoanRepayment(AccountsController):
 			if flt(self.excess_amount) > 0:
 				query = query.set(loan.excess_amount_paid, loan.excess_amount_paid - self.excess_amount)
 
+			query = self.update_limits(query, loan, cancel=1)
 			query.run()
 
 	def update_demands(self, cancel=0):
@@ -989,21 +992,19 @@ class LoanRepayment(AccountsController):
 				loan_demand.name == payment.loan_demand
 			).run()
 
-	def update_limits(self, cancel=0):
+	def update_limits(self, query, loan, cancel=0):
 		principal_amount_paid = self.principal_amount_paid
 		if cancel:
 			principal_amount_paid = -1 * flt(self.principal_amount_paid)
 
-		loan = frappe.qb.DocType("Loan")
-
 		if self.repayment_schedule_type == "Line of Credit":
-			frappe.qb.update(loan).set(
-				loan.available_limit_amount, loan.available_limit_amount + principal_amount_paid
-			).set(
-				loan.utilized_limit_amount, loan.utilized_limit_amount - principal_amount_paid
-			).where(
-				loan.name == self.against_loan
-			).run()
+			query = (
+				query.set(loan.available_limit_amount, loan.available_limit_amount + principal_amount_paid)
+				.set(loan.utilized_limit_amount, loan.utilized_limit_amount - principal_amount_paid)
+				.where(loan.name == self.against_loan)
+			)
+
+		return query
 
 	def update_security_deposit_amount(self, cancel=0):
 		if self.repayment_type == "Security Deposit Adjustment":
