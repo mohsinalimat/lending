@@ -726,7 +726,7 @@ def update_days_past_due_in_loans(
 	)
 
 	for disbursement in disbursements:
-		if getdate(posting_date) > add_days(getdate(), -1) or force_update_dpd_in_loan:
+		if getdate(posting_date) >= add_days(getdate(), -1) or force_update_dpd_in_loan:
 			demand = get_unpaid_demands(
 				loan_name,
 				posting_date=posting_date,
