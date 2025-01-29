@@ -2040,7 +2040,7 @@ def setup_loan_demand_offset_order(company=None):
 		company = "_Test Company"
 
 	create_demand_offset_order(
-		"Test Demand Loan Loan Demand Offset Order", ["Penalty", "Interest", "Principle"]
+		"Test Demand Loan Loan Demand Offset Order", ["Penalty", "Interest", "Principal"]
 	)
 	create_demand_offset_order(
 		"Test EMI Based Standard Loan Demand Offset Order",
