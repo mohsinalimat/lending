@@ -509,7 +509,8 @@
    "fieldtype": "Link",
    "label": "Loan Repayment",
    "options": "Loan Repayment",
-   "read_only": 1
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "loan_disbursement",
@@ -532,7 +533,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-25 19:04:21.913899",
+ "modified": "2025-01-30 19:09:28.616723",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Restructure",
