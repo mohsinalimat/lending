@@ -286,6 +286,8 @@ def calculate_accrual_amount_for_loans(
 
 
 def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_frequency):
+	last_accrual_date = getdate(last_accrual_date)
+	accrual_date = getdate(accrual_date)
 	match loan_accrual_frequency:
 		case "Daily":
 			return get_accrual_frequency_breaks_daily(last_accrual_date, accrual_date)
