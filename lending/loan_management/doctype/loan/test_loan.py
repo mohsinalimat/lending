@@ -456,7 +456,7 @@ class TestLoan(IntegrationTestCase):
 			{"loan_security": "Test Security 2", "qty": 4000.00},
 			{"loan_security": "Test Security 1", "qty": 2000.00},
 		]
-
+		posting_date = "2025-01-30"
 		loan_application = create_loan_application(
 			"_Test Company", self.applicant2, "Stock Loan", pledges, "Repay Over Number of Periods", 12
 		)
@@ -468,7 +468,7 @@ class TestLoan(IntegrationTestCase):
 			"Repay Over Number of Periods",
 			12,
 			loan_application,
-			posting_date=add_months(nowdate(), -1),
+			posting_date=add_months(posting_date, -1),
 		)
 
 		loan.submit()
@@ -476,13 +476,13 @@ class TestLoan(IntegrationTestCase):
 		make_loan_disbursement_entry(
 			loan.name,
 			loan.loan_amount,
-			disbursement_date=add_months(nowdate(), -1),
+			disbursement_date=add_months(posting_date, -1),
 			repayment_start_date=nowdate(),
 		)
 
-		process_daily_loan_demands(loan=loan.name, posting_date=nowdate())
+		process_daily_loan_demands(loan=loan.name, posting_date=posting_date)
 
-		repayment_entry = create_repayment_entry(loan.name, nowdate(), 89768.75)
+		repayment_entry = create_repayment_entry(loan.name, posting_date, 89768.75)
 
 		repayment_entry.submit()
 
