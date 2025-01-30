@@ -209,6 +209,14 @@ class LoanRepayment(AccountsController):
 					)
 					process_daily_loan_demands(posting_date=add_days(max_date, 1), loan=self.against_loan)
 
+		if not self.is_term_loan:
+			process_loan_interest_accrual_for_loans(
+				posting_date=self.posting_date, loan=self.against_loan, loan_product=self.loan_product
+			)
+			process_daily_loan_demands(
+				posting_date=self.posting_date, loan_product=self.loan_product, loan=self.against_loan
+			)
+
 	def post_suspense_entries(self, cancel=0):
 		from lending.loan_management.doctype.loan_write_off.loan_write_off import (
 			write_off_suspense_entries,
@@ -315,7 +323,7 @@ class LoanRepayment(AccountsController):
 			create_loan_demand(
 				self.against_loan,
 				self.posting_date,
-				"EMI" if self.is_term_loan else "Normal",
+				"EMI",
 				"Principal",
 				flt(amount, precision),
 				paid_amount=flt(amount, precision),
@@ -681,7 +689,7 @@ class LoanRepayment(AccountsController):
 			create_loan_demand(
 				self.against_loan,
 				self.posting_date,
-				"EMI" if self.is_term_loan else "Normal",
+				"EMI",
 				"Interest",
 				flt(self.unbooked_interest_paid, precision),
 				paid_amount=self.unbooked_interest_paid,
@@ -904,6 +912,7 @@ class LoanRepayment(AccountsController):
 			and (total_payable - self.amount_paid) <= flt(auto_write_off_amount)
 		):
 			auto_close = True
+
 		return auto_close
 
 	def mark_as_unpaid(self):
@@ -1131,28 +1140,30 @@ class LoanRepayment(AccountsController):
 			amount_paid = self.allocate_charges(amount_paid, amounts.get("unpaid_demands"))
 		else:
 			if loan_status == "Written Off":
-				allocation_order = self.get_allocation_order(
-					"Collection Offset Sequence for Written Off Asset"
+				allocation_order = frappe.db.get_value(
+					"Company", self.company, "collection_offset_sequence_for_written_off_asset"
 				)
 			elif (
 				self.repayment_type in ("Partial Settlement", "Full Settlement", "Principal Adjustment")
 				or loan_status == "Settled"
 			):
-				allocation_order = self.get_allocation_order(
-					"Collection Offset Sequence for Settlement Collection"
+				allocation_order = frappe.db.get_value(
+					"Company", self.company, "collection_offset_sequence_for_settlement_collection"
 				)
 			elif self.is_npa:
-				allocation_order = self.get_allocation_order(
-					"Collection Offset Sequence for Sub Standard Asset"
+				allocation_order = frappe.db.get_value(
+					"Company", self.company, "collection_offset_sequence_for_sub_standard_asset"
 				)
 			else:
-				allocation_order = self.get_allocation_order("Collection Offset Sequence for Standard Asset")
+				allocation_order = frappe.db.get_value(
+					"Company", self.company, "collection_offset_sequence_for_standard_asset"
+				)
 
-			if self.shortfall_amount:
-				if self.amount_paid > self.shortfall_amount:
-					self.principal_amount_paid = self.shortfall_amount
-				else:
-					self.principal_amount_paid = self.amount_paid
+			if self.shortfall_amount and self.amount_paid > self.shortfall_amount:
+				self.principal_amount_paid = self.shortfall_amount
+			elif self.shortfall_amount:
+				self.principal_amount_paid = self.amount_paid
+
 			amount_paid = self.apply_allocation_order(
 				allocation_order, amount_paid, amounts.get("unpaid_demands"), status=loan_status
 			)
@@ -1191,6 +1202,10 @@ class LoanRepayment(AccountsController):
 			pending_interest = flt(amounts.get("unaccrued_interest")) + flt(
 				amounts.get("unbooked_interest")
 			)
+			if not self.is_term_loan:
+				pending_interest += flt(
+					get_accrued_interest(posting_date=self.posting_date, loan=self.against_loan), precision
+				)
 			if pending_interest > 0:
 				if pending_interest > amount_paid:
 					self.total_interest_paid += amount_paid
@@ -1256,24 +1271,6 @@ class LoanRepayment(AccountsController):
 		):
 			last_principal_demand = self.get("repayment_details")[-1]
 			last_principal_demand.paid_amount += abs(self.excess_amount)
-
-	def get_allocation_order(self, offset_name):
-		offset_mapping = {
-			"Collection Offset Sequence for Standard Asset": "collection_offset_sequence_for_standard_asset",
-			"Collection Offset Sequence for Sub Standard Asset": "collection_offset_sequence_for_sub_standard_asset",
-			"Collection Offset Sequence for Written Off Asset": "collection_offset_sequence_for_written_off_asset",
-			"Collection Offset Sequence for Settlement Collection": "collection_offset_sequence_for_settlement_collection",
-		}
-		offset_field = offset_mapping[offset_name]
-
-		allocation_order = frappe.db.get_value("Loan Product", self.loan_product, offset_field)
-		if not allocation_order:
-			allocation_order = frappe.db.get_value("Company", self.company, offset_field)
-
-		if not allocation_order:
-			frappe.throw(_(f"Please set {offset_name} in either Company or Loan Product"))
-
-		return allocation_order
 
 	def set_partner_payment_ratio(self):
 		if self.get("loan_partner"):
@@ -1369,12 +1366,14 @@ class LoanRepayment(AccountsController):
 		for d in allocation_order_doc.get("components"):
 			if d.demand_type == "EMI (Principal + Interest)" and pending_amount > 0:
 				pending_amount = self.adjust_component(pending_amount, "BPI", demands)
-				pending_amount = self.adjust_component(pending_amount, "EMI", demands)
+				if self.is_term_loan:
+					pending_amount = self.adjust_component(pending_amount, "EMI", demands)
 			if d.demand_type == "Principal" and pending_amount > 0:
 				pending_amount = self.adjust_component(pending_amount, "Normal", demands)
-				pending_amount = self.adjust_component(
-					pending_amount, "EMI", demands, demand_subtype="Principal"
-				)
+				if self.is_term_loan:
+					pending_amount = self.adjust_component(
+						pending_amount, "EMI", demands, demand_subtype="Principal"
+					)
 				if (
 					self.repayment_type
 					in (
@@ -1385,6 +1384,7 @@ class LoanRepayment(AccountsController):
 						"Principal Adjustment",
 					)
 					or status == "Settled"
+					and self.repayment_type not in ("Interest Waiver", "Penalty Waiver", "Charges Waiver")
 				):
 					principal_amount_paid = sum(
 						d.paid_amount for d in self.get("repayment_details") if d.demand_subtype == "Principal"
@@ -1986,6 +1986,7 @@ def get_amounts(
 	for_update=False,
 ):
 	demand_type, demand_subtype = get_demand_type(payment_type)
+
 	against_loan_doc = frappe.get_doc("Loan", against_loan, for_update=for_update)
 	unpaid_demands = get_unpaid_demands(
 		against_loan_doc.name,
@@ -1996,6 +1997,7 @@ def get_amounts(
 		loan_disbursement=loan_disbursement,
 		for_update=for_update,
 	)
+
 	amounts = process_amount_for_loan(
 		against_loan_doc,
 		posting_date,
@@ -2369,10 +2371,7 @@ def get_unbooked_interest(loan, posting_date, loan_disbursement=None, last_deman
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 
 	accrued_interest = get_accrued_interest(
-		loan,
-		posting_date,
-		loan_disbursement=loan_disbursement,
-		last_demand_date=add_days(last_demand_date, 2),
+		loan, posting_date, loan_disbursement=loan_disbursement, last_demand_date=last_demand_date
 	)
 	unbooked_interest = flt(accrued_interest, precision)
 
