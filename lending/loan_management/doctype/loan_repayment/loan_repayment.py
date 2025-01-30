@@ -876,16 +876,19 @@ class LoanRepayment(AccountsController):
 		shortfall_amount = self.pending_principal_amount - self.principal_amount_paid
 
 		if self.repayment_type in ("Interest Waiver", "Penalty Waiver", "Charges Waiver"):
-			total_payable = frappe.db.get_value(
-				"Loan Demand",
-				{
-					"loan": self.against_loan,
-					"docstatus": 1,
-					"outstanding_amount": (">", 0),
-					"demand_date": ("<=", self.posting_date),
-				},
-				"sum(outstanding_amount)",
-			) or 0
+			total_payable = (
+				frappe.db.get_value(
+					"Loan Demand",
+					{
+						"loan": self.against_loan,
+						"docstatus": 1,
+						"outstanding_amount": (">", 0),
+						"demand_date": ("<=", self.posting_date),
+					},
+					"sum(outstanding_amount)",
+				)
+				or 0
+			)
 		else:
 			total_payable = self.payable_amount
 
