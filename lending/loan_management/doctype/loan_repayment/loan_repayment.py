@@ -1338,19 +1338,24 @@ class LoanRepayment(AccountsController):
 			paid_charges[charge.charge_code] = charge.amount
 
 		for demand in demands:
-			if paid_charges.get(demand.demand_subtype, 0) > 0:
+			if amount_paid > 0 and paid_charges.get(demand.demand_subtype, 0) > 0:
+				if amount_paid > paid_charges.get(demand.demand_subtype, 0):
+					paid_amount = paid_charges.get(demand.demand_subtype, 0)
+				else:
+					paid_amount = amount_paid
+
 				self.append(
 					"repayment_details",
 					{
 						"loan_demand": demand.name,
-						"paid_amount": paid_charges.get(demand.demand_subtype),
+						"paid_amount": paid_amount,
 						"demand_type": "Charges",
 						"demand_subtype": demand.demand_subtype,
 						"sales_invoice": demand.sales_invoice,
 					},
 				)
 
-				amount_paid -= paid_charges.get(demand.demand_subtype, 0)
+				amount_paid -= paid_amount
 
 		return amount_paid
 
