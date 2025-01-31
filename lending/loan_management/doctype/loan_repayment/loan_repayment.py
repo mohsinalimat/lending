@@ -621,6 +621,7 @@ class LoanRepayment(AccountsController):
 		gle_map = []
 		remarks = self.get_remarks()
 		payment_account = self.get_payment_account()
+		precision = cint(frappe.db.get_default("currency_precision")) or 2
 
 		payment_party_type = ""
 		payment_party = ""
