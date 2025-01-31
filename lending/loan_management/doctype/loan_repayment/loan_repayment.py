@@ -1344,18 +1344,18 @@ class LoanRepayment(AccountsController):
 				else:
 					paid_amount = amount_paid
 
-					self.append(
-						"repayment_details",
-						{
-							"loan_demand": demand.name,
-							"paid_amount": paid_amount,
-							"demand_type": "Charges",
-							"demand_subtype": demand.demand_subtype,
-							"sales_invoice": demand.sales_invoice,
-						},
-					)
+				self.append(
+					"repayment_details",
+					{
+						"loan_demand": demand.name,
+						"paid_amount": paid_amount,
+						"demand_type": "Charges",
+						"demand_subtype": demand.demand_subtype,
+						"sales_invoice": demand.sales_invoice,
+					},
+				)
 
-					amount_paid -= paid_amount
+				amount_paid -= paid_amount
 
 		return amount_paid
 
