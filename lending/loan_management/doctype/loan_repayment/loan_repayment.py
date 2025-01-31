@@ -875,17 +875,6 @@ class LoanRepayment(AccountsController):
 		shortfall_amount = self.pending_principal_amount - self.principal_amount_paid
 
 		if self.repayment_type in ("Interest Waiver", "Penalty Waiver", "Charges Waiver"):
-<<<<<<< HEAD
-			total_payable = frappe.db.get_value(
-				"Loan Demand",
-				{
-					"loan": self.against_loan,
-					"docstatus": 1,
-					"outstanding_amount": (">", 0),
-					"posting_date": ("<=", self.posting_date),
-				},
-				"sum(outstanding_amount)",
-=======
 			total_payable = (
 				frappe.db.get_value(
 					"Loan Demand",
@@ -898,7 +887,6 @@ class LoanRepayment(AccountsController):
 					"sum(outstanding_amount)",
 				)
 				or 0
->>>>>>> 793949f (fix: Deadlock issues on posting loan repayment)
 			)
 		else:
 			total_payable = self.payable_amount
@@ -907,7 +895,7 @@ class LoanRepayment(AccountsController):
 			auto_write_off_amount
 			and shortfall_amount > 0
 			and shortfall_amount <= auto_write_off_amount
-			and (total_payable - self.amount_paid <= shortfall_amount)
+			and flt(total_payable - self.amount_paid) <= flt(shortfall_amount)
 		):
 			auto_close = True
 
@@ -919,7 +907,7 @@ class LoanRepayment(AccountsController):
 			self.principal_amount_paid >= self.pending_principal_amount
 			and not flt(shortfall_amount)
 			and flt(self.excess_amount) <= flt(excess_amount_limit)
-			and (total_payable - self.amount_paid) <= flt(auto_write_off_amount)
+			and flt(total_payable - self.amount_paid) <= flt(auto_write_off_amount)
 		):
 			auto_close = True
 
