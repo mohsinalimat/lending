@@ -621,6 +621,7 @@ class LoanRepayment(AccountsController):
 		gle_map = []
 		remarks = self.get_remarks()
 		payment_account = self.get_payment_account()
+		precision = cint(frappe.db.get_default("currency_precision")) or 2
 
 		payment_party_type = ""
 		payment_party = ""
@@ -817,6 +818,51 @@ class LoanRepayment(AccountsController):
 						}
 					)
 				)
+
+		if not self.get("repayment_details") and flt(self.pending_principal_amount, precision) > 0:
+
+			if flt(self.amount_paid, precision) > flt(self.pending_principal_amount, precision):
+				frappe.throw(
+					_("The amount paid ({0}) cannot be more than the pending principal amount ({1}).").format(
+						flt(self.amount_paid, precision), flt(self.pending_principal_amount, precision)
+					)
+				)
+
+			gle_map.append(
+				self.get_gl_dict(
+					{
+						"account": payment_account,
+						"against": self.loan_account,
+						"debit": flt(self.amount_paid, precision),
+						"debit_in_account_currency": flt(self.amount_paid, precision),
+						"against_voucher_type": "Loan",
+						"against_voucher": self.against_loan,
+						"remarks": _(remarks),
+						"cost_center": self.cost_center,
+						"posting_date": getdate(self.posting_date),
+						"party_type": payment_party_type,
+						"party": payment_party,
+					}
+				)
+			)
+
+			gle_map.append(
+				self.get_gl_dict(
+					{
+						"account": self.loan_account,
+						"party_type": self.applicant_type,
+						"party": self.applicant,
+						"against": payment_account,
+						"credit": flt(self.amount_paid, precision),
+						"credit_in_account_currency": flt(self.amount_paid, precision),
+						"against_voucher_type": "Loan",
+						"against_voucher": self.against_loan,
+						"remarks": _(remarks),
+						"cost_center": self.cost_center,
+						"posting_date": getdate(self.posting_date),
+					}
+				)
+			)
 
 		if gle_map:
 			make_gl_entries(gle_map, cancel=cancel, adv_adj=adv_adj, merge_entries=False)
