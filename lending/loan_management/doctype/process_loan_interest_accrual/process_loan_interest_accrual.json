@@ -9,6 +9,7 @@
   "posting_date",
   "loan_product",
   "loan",
+  "company",
   "accrual_type",
   "amended_from"
  ],
@@ -49,12 +50,18 @@
    "label": "Accrual Type",
    "options": "Regular\nRepayment\nDisbursement\nCredit Adjustment\nDebit Adjustment\nRefund",
    "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-06-28 12:49:35.247050",
+ "modified": "2025-01-31 04:41:56.301053",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Process Loan Interest Accrual",

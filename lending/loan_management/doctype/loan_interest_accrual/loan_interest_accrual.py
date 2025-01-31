@@ -16,8 +16,8 @@ from frappe.utils import (
 	getdate,
 	nowdate,
 )
+from frappe.utils.caching import redis_cache
 
-from erpnext import get_default_company
 from erpnext.accounts.general_ledger import make_gl_entries
 from erpnext.controllers.accounts_controller import AccountsController
 
@@ -193,6 +193,7 @@ def calculate_accrual_amount_for_loans(
 	is_future_accrual=0,
 	accrual_date=None,
 	loan_disbursement=None,
+	loan_accrual_frequency=None,
 ):
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import (
 		get_pending_principal_amount,
@@ -210,8 +211,6 @@ def calculate_accrual_amount_for_loans(
 		overlapping_dates = get_overlapping_dates(
 			loan.name, last_accrual_date, posting_date, loan_disbursement=loan_disbursement
 		)
-		company = get_default_company()
-		loan_accrual_frequency = get_loan_accrual_frequency(company)
 		repayment_schedule_wise_dates = dict()
 
 		accrual_frequency_breaks = get_accrual_frequency_breaks(
@@ -737,6 +736,7 @@ def make_accrual_interest_entry_for_loans(
 	accrual_type="Regular",
 	accrual_date=None,
 	limit=0,
+	company=None,
 ):
 
 	loan_doc = frappe.qb.DocType("Loan")
@@ -781,11 +781,13 @@ def make_accrual_interest_entry_for_loans(
 	if loan_product:
 		query = query.where(loan_doc.loan_product == loan_product)
 
+	if company:
+		query = query.where(loan_doc.company == company)
+
 	if limit:
 		query = query.limit(limit)
 
 	open_loans = query.run(as_dict=1)
-
 	if loan:
 		process_interest_accrual_batch(
 			open_loans, posting_date, process_loan_interest, accrual_type, accrual_date
@@ -801,6 +803,7 @@ def make_accrual_interest_entry_for_loans(
 				process_loan_interest=process_loan_interest,
 				accrual_type=accrual_type,
 				accrual_date=accrual_date,
+				company=company,
 				via_background_job=True,
 				queue="long",
 				enqueue_after_commit=True,
@@ -816,6 +819,9 @@ def process_interest_accrual_batch(
 	loans, posting_date, process_loan_interest, accrual_type, accrual_date, via_background_job=False
 ):
 	for loan in loans:
+		loan_accrual_frequency = get_loan_accrual_frequency(loan.company)
+		if not is_posting_date_accrual_day(loan_accrual_frequency, posting_date=posting_date):
+			continue
 		try:
 			calculate_penal_interest_for_loans(
 				loan,
@@ -831,6 +837,7 @@ def process_interest_accrual_batch(
 				process_loan_interest=process_loan_interest,
 				accrual_type=accrual_type,
 				accrual_date=accrual_date,
+				loan_accrual_frequency=loan_accrual_frequency,
 			)
 
 			if len(loans) > 1:
@@ -1074,6 +1081,7 @@ def reverse_loan_interest_accruals(
 	return accruals
 
 
+@redis_cache(ttl=5)
 def get_loan_accrual_frequency(company):
 	company_doc = frappe.qb.DocType("Company")
 	query = (
