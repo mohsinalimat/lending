@@ -1634,6 +1634,10 @@ class LoanRepayment(AccountsController):
 		return gle_map
 
 	def add_round_off_gl_entry(self, gle_map):
+
+		if self.repayment_type == "Penalty Waiver":
+			return
+
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
 
 		payment_account = self.get_payment_account()
@@ -1641,7 +1645,7 @@ class LoanRepayment(AccountsController):
 
 		diff = flt(total_payment_amount - self.amount_paid, precision)
 
-		if abs(diff) > 0:
+		if 0 < abs(diff) < 1:
 			round_off_account = frappe.db.get_value("Company", self.company, "round_off_account")
 			self.add_gl_entry(payment_account, round_off_account, -1 * diff, gle_map, is_waiver_entry=True)
 
