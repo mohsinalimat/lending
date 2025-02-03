@@ -12,6 +12,9 @@ class ProcessLoanClassification(Document):
 		if getdate(self.posting_date) < add_days(getdate(), -1) and not self.loan:
 			frappe.throw(_("For backdated process loan classification, a Loan account is mandatory."))
 
+		if self.force_update_dpd_in_loan and not self.loan:
+			frappe.throw(_("For force update DPD, a Loan account is mandatory."))
+
 	def on_submit(self):
 		filters = {
 			"docstatus": 1,
