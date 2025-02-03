@@ -7,6 +7,8 @@ from frappe.model.document import Document
 from frappe.utils import add_days, nowdate
 
 from lending.loan_management.doctype.loan_interest_accrual.loan_interest_accrual import (
+	get_loan_accrual_frequency,
+	is_posting_date_accrual_day,
 	make_accrual_interest_entry_for_loans,
 )
 
@@ -26,6 +28,10 @@ class ProcessLoanInterestAccrual(Document):
 
 def schedule_accrual():
 	for company in frappe.get_all("Company", {"is_group": 0}, pluck="name"):
+		posting_date = add_days(nowdate(), -1)
+		loan_accrual_frequency = get_loan_accrual_frequency(company)
+		if not is_posting_date_accrual_day(loan_accrual_frequency, posting_date=posting_date):
+			continue
 		process_loan_interest_accrual_for_loans(company=company)
 
 
