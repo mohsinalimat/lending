@@ -25,8 +25,8 @@ class ProcessLoanInterestAccrual(Document):
 
 
 def schedule_accrual():
-	posting_date = add_days(nowdate(), -1)
-	process_loan_interest_accrual_for_loans(posting_date=posting_date)
+	for company in frappe.get_all("Company", {"is_group": 0}, pluck="name"):
+		process_loan_interest_accrual_for_loans(company=company)
 
 
 def process_loan_interest_accrual_for_loans(
