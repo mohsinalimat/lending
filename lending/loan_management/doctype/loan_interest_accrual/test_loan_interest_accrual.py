@@ -45,7 +45,7 @@ class TestLoanInterestAccrual(unittest.TestCase):
 			25,
 			0,
 			5,
-			"Cash",
+			"Cash - _TC",
 			"Disbursement Account - _TC",
 			"Payment Account - _TC",
 			"Loan Account - _TC",
