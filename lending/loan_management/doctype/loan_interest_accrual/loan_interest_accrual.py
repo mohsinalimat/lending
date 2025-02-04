@@ -89,14 +89,41 @@ class LoanInterestAccrual(AccountsController):
 		if self.interest_type == "Normal Interest":
 			receivable_account = account_details.interest_accrued_account
 			income_account = self.interest_income_account or account_details.interest_income_account
+
+			if not receivable_account:
+				frappe.throw(
+					_("Please set Interest Accrued Account in Loan Product {0}").format(self.loan_product)
+				)
+
+			if not income_account:
+				frappe.throw(
+					_("Please set Interest Income Account in Loan Product {0}").format(self.loan_product)
+				)
 		else:
 			receivable_account = account_details.penalty_accrued_account
 			income_account = account_details.penalty_income_account
+
+			if not receivable_account:
+				frappe.throw(
+					_("Please set Penalty Accrued Account in Loan Product {0}").format(self.loan_product)
+				)
+
+			if not income_account:
+				frappe.throw(
+					_("Please set Penalty Income Account in Loan Product {0}").format(self.loan_product)
+				)
 
 		if self.additional_interest_amount:
 			if not account_details.additional_interest_income:
 				frappe.throw(
 					_("Please set Additional Interest Income Account in Loan Product {0}").format(
+						self.loan_product
+					)
+				)
+
+			if not account_details.additional_interest_accrued:
+				frappe.throw(
+					_("Please set Additional Interest Accrued Account in Loan Product {0}").format(
 						self.loan_product
 					)
 				)
@@ -433,7 +460,7 @@ def get_overlapping_dates(
 def get_principal_amount_for_term_loan(repayment_schedule, date):
 	principal_amount = frappe.db.get_value(
 		"Repayment Schedule",
-		{"parent": repayment_schedule, "payment_date": ("<", date)},
+		{"parent": repayment_schedule, "payment_date": ("<=", date)},
 		"balance_loan_amount",
 		order_by="payment_date DESC",
 	)
@@ -469,7 +496,6 @@ def calculate_penal_interest_for_loans(
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import get_unpaid_demands
 
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
-	demands = get_unpaid_demands(loan.name, posting_date, emi_wise=True)
 
 	loan_product, freeze_date, loan_status, penal_interest_rate = frappe.get_value(
 		"Loan", loan.name, ["loan_product", "freeze_date", "status", "penalty_charges_rate"]
@@ -481,6 +507,11 @@ def calculate_penal_interest_for_loans(
 		penal_interest_rate = frappe.get_value(
 			"Loan Product", loan_product, "penalty_interest_rate", cache=True
 		)
+
+	if flt(penal_interest_rate, precision) <= 0:
+		return
+
+	demands = get_unpaid_demands(loan.name, posting_date, emi_wise=True)
 
 	grace_period_days = cint(
 		frappe.get_value("Loan Product", loan_product, "grace_period_in_days", cache=True)

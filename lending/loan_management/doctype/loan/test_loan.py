@@ -1,9 +1,9 @@
 # Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import unittest
 
 import frappe
+from frappe.tests import IntegrationTestCase
 from frappe.utils import (
 	add_days,
 	add_months,
@@ -51,7 +51,7 @@ from lending.loan_management.doctype.process_loan_security_shortfall.process_loa
 )
 
 
-class TestLoan(unittest.TestCase):
+class TestLoan(IntegrationTestCase):
 	def setUp(self):
 		set_loan_settings_in_company()
 		create_loan_accounts()
@@ -93,6 +93,7 @@ class TestLoan(unittest.TestCase):
 				loan_product[2],
 				repayment_schedule_type=loan_product[3],
 			)
+			add_or_update_loan_charges(loan_product[0])
 
 		for loan_product in loc_loans:
 			create_loan_product(
@@ -1126,6 +1127,33 @@ class TestLoan(unittest.TestCase):
 
 		# Cancel the entry to check if correct schedule becomes active
 		repayment_entry1.cancel()
+
+		# Check only the demands related to repayment_entry1 are only cancelled
+		loan_restructure = frappe.db.get_value(
+			"Loan Restructure", {"loan_repayment": repayment_entry1.name}
+		)
+		loan_repayment_schedule = frappe.db.get_value(
+			"Loan Repayment Schedule", {"loan_restructure": loan_restructure}
+		)
+		loan_demands = frappe.db.get_all(
+			"Loan Demand",
+			{"loan_repayment_schedule": loan_repayment_schedule, "docstatus": 1},
+		)
+		self.assertFalse(loan_demands)
+
+		# Check only the demands related to repayment_entry2 are only cancelled
+		loan_restructure = frappe.db.get_value(
+			"Loan Restructure", {"loan_repayment": repayment_entry2.name}
+		)
+		loan_repayment_schedule = frappe.db.get_value(
+			"Loan Repayment Schedule", {"loan_restructure": loan_restructure}
+		)
+		loan_demands = frappe.db.get_all(
+			"Loan Demand",
+			{"loan_repayment_schedule": loan_repayment_schedule, "docstatus": 1},
+		)
+		self.assertTrue(loan_demands)
+
 		repayment_entry2.cancel()
 
 	def test_interest_accrual_and_demand_on_freeze_and_unfreeze(self):
@@ -1335,15 +1363,27 @@ class TestLoan(unittest.TestCase):
 
 		loan.submit()
 
-		make_loan_disbursement_entry(
+		disbursement = make_loan_disbursement_entry(
 			loan.name, loan.loan_amount, disbursement_date="2024-03-06", repayment_start_date="2024-04-05"
 		)
+
+		# Test Limit Update
+		loan.load_from_db()
+		self.assertEqual(loan.utilized_limit_amount, 500000)
+		self.assertEqual(loan.available_limit_amount, 0)
+
 		process_daily_loan_demands(posting_date="2024-04-05", loan=loan.name)
 
 		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
 
-		repayment_entry = create_repayment_entry(loan.name, "2024-10-05", 47523)
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-10-05", 47523, loan_disbursement=disbursement.name
+		)
 		repayment_entry.submit()
+
+		loan.load_from_db()
+		self.assertEqual(loan.utilized_limit_amount, 500000 - repayment_entry.principal_amount_paid)
+		self.assertEqual(loan.available_limit_amount, repayment_entry.principal_amount_paid)
 
 	def test_shortfall_loan_close_limit(self):
 		loan = create_loan(
@@ -1466,6 +1506,211 @@ class TestLoan(unittest.TestCase):
 		)
 		repayment_entry.submit()
 
+	def test_excess_amount_for_waiver(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			100000,
+			"Repay Over Number of Periods",
+			6,
+			"Customer",
+			"2024-07-15",
+			"2024-06-25",
+			10,
+		)
+		loan.submit()
+
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-06-25", repayment_start_date="2024-07-15"
+		)
+		process_daily_loan_demands(posting_date="2025-01-05", loan=loan.name)
+
+		sales_invoice = frappe.get_doc(
+			{
+				"doctype": "Sales Invoice",
+				"customer": "_Test Customer 1",
+				"company": "_Test Company",
+				"loan": loan.name,
+				"posting_date": "2025-01-15",
+				"posting_time": "00:06:10",
+				"set_posting_time": 1,
+				"items": [{"item_code": "Processing Fee", "qty": 1, "rate": 5000}],
+			}
+		)
+		sales_invoice.submit()
+
+		repayment_entry = create_repayment_entry(loan.name, "2025-01-16", 106684.69)
+		repayment_entry.submit()
+
+		loan_adjustment = frappe.get_doc(
+			{
+				"doctype": "Loan Adjustment",
+				"loan": loan.name,
+				"posting_date": "2025-01-16",
+				"adjustments": [{"loan_repayment_type": "Charges Waiver", "amount": 4900}],
+			}
+		)
+		loan_adjustment.submit()
+
+		credit_notes = frappe.get_all(
+			"Sales Invoice",
+			filters={"loan": loan.name, "is_return": 1, "status": "Return"},
+			fields=["name", "grand_total", "return_against"],
+		)
+
+		original_invoice_total = frappe.db.get_value("Sales Invoice", sales_invoice.name, "grand_total")
+
+		total_credit_note_sum = sum(abs(flt(cr["grand_total"])) for cr in credit_notes)
+
+		if total_credit_note_sum < original_invoice_total:
+			missing_amount = original_invoice_total - total_credit_note_sum
+			self.assertTrue(
+				total_credit_note_sum >= original_invoice_total,
+				f"Credit notes missing amount: {missing_amount}.",
+			)
+
+		outstanding_demand = frappe.db.get_value(
+			"Loan Demand", {"loan": loan.name, "outstanding_amount": (">", 0)}, "outstanding_amount"
+		)
+		self.assertEqual(
+			flt(outstanding_demand), 0, "There are still outstanding amounts in the loan demand."
+		)
+
+	def test_dpd_calculation(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			100000,
+			"Repay Over Number of Periods",
+			30,
+			repayment_start_date="2024-10-05",
+			posting_date="2024-09-15",
+			rate_of_interest=10,
+			applicant_type="Customer",
+		)
+		loan.submit()
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-09-15", repayment_start_date="2024-10-05"
+		)
+		process_daily_loan_demands(posting_date="2024-10-05", loan=loan.name)
+
+		for date in ["2024-10-05", "2024-10-06", "2024-10-07", "2024-10-08", "2024-10-09", "2024-10-10"]:
+			create_process_loan_classification(posting_date=date, loan=loan.name)
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-10-05", 3000)
+		repayment_entry.submit()
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-10-09", 782)
+		repayment_entry.submit()
+
+		process_daily_loan_demands(posting_date="2024-11-05", loan=loan.name)
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-11-05", 3000)
+		repayment_entry.submit()
+
+		repayment_entry = create_repayment_entry(loan.name, "2024-11-10", 782)
+		repayment_entry.submit()
+
+		frappe.db.sql(
+			"""
+		update `tabDays Past Due Log` set days_past_due = -1 where loan = %s """,
+			loan.name,
+		)
+
+		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
+
+		dpd_logs = frappe.db.sql(
+			"""
+			SELECT posting_date, days_past_due
+			FROM `tabDays Past Due Log`
+			WHERE loan = %s
+			ORDER BY posting_date
+			""",
+			(loan.name),
+			as_dict=1,
+		)
+
+		expected_dpd_values = {
+			"2024-10-05": 1,
+			"2024-10-06": 2,
+			"2024-10-07": 3,
+			"2024-10-08": 4,
+			"2024-10-09": 0,  # Fully repaid
+			"2024-10-10": 0,
+			"2024-11-04": 0,
+			"2024-11-05": 1,  # DPD starts again after repayment
+			"2024-11-06": 2,
+			"2024-11-07": 3,
+			"2024-11-08": 4,
+			"2024-11-09": 5,
+			"2024-11-10": 0,  # Fully repaid
+		}
+
+		for log in dpd_logs:
+			posting_date = log["posting_date"]
+			dpd_value = log["days_past_due"]
+
+			posting_date_str = posting_date.strftime("%Y-%m-%d")
+
+			expected_dpd = expected_dpd_values.get(posting_date_str, 0)
+			self.assertEqual(
+				dpd_value,
+				expected_dpd,
+				f"DPD mismatch for {posting_date}: Expected {expected_dpd}, got {dpd_value}",
+			)
+
+	def test_charges_payment(self):
+		from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
+
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			100000,
+			"Repay Over Number of Periods",
+			30,
+			repayment_start_date="2024-10-05",
+			posting_date="2024-09-15",
+			rate_of_interest=10,
+			applicant_type="Customer",
+		)
+		loan.submit()
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-09-15", repayment_start_date="2024-10-05"
+		)
+
+		# Create Charges Demand to simulate charge creation
+		for i in range(0, 2):
+			sales_invoice = create_sales_invoice(
+				posting_date="2024-09-15", item_code="Processing Fee", qty=1, rate=1000, do_not_submit=1
+			)
+			sales_invoice.loan = loan.name
+			sales_invoice.save()
+			sales_invoice.submit()
+
+		repayment = create_repayment_entry(
+			loan.name,
+			"2024-09-15",
+			1000,
+			repayment_type="Charge Payment",
+			payable_charges=[{"charge_code": "Processing Fee", "amount": 1000}],
+		)
+		repayment.submit()
+
+		self.assertEqual(repayment.total_charges_paid, 1000)
+		self.assertEqual(repayment.repayment_details[0].paid_amount, 1000)
+
+		repayment = create_repayment_entry(
+			loan.name,
+			"2024-09-15",
+			500,
+			repayment_type="Charge Payment",
+			payable_charges=[{"charge_code": "Processing Fee", "amount": 500}],
+		)
+		repayment.submit()
+
+		self.assertEqual(repayment.total_charges_paid, 500)
+		self.assertEqual(repayment.repayment_details[0].paid_amount, 500)
+
 	def test_accrual_background_job(self):
 		loan = create_loan(
 			"_Test Customer 1",
@@ -1530,6 +1775,36 @@ class TestLoan(unittest.TestCase):
 		expected_dates = [getdate(i) for i in expected_dates]
 
 		self.assertEqual(loan_interest_accruals, expected_dates)
+
+
+def add_or_update_loan_charges(product_name):
+	loan_product = frappe.get_doc("Loan Product", product_name)
+
+	charge_type = "Processing Fee"
+
+	if not frappe.db.exists("Item", charge_type):
+		frappe.get_doc(
+			{
+				"doctype": "Item",
+				"item_code": charge_type,
+				"item_group": "Services",
+				"is_stock_item": 0,
+				"income_account": "Processing Fee Income Account - _TC",
+			}
+		).insert()
+
+	loan_product.loan_charges = []
+
+	loan_product.append(
+		"loan_charges",
+		{
+			"charge_type": charge_type,
+			"income_account": "Processing Fee Income Account - _TC",
+			"receivable_account": "Processing Fee Receivable Account - _TC",
+			"waiver_account": "Processing Fee Waiver Account - _TC",
+		},
+	)
+	loan_product.save()
 
 
 def create_secured_demand_loan(applicant, disbursement_amount=None):
@@ -1718,6 +1993,30 @@ def create_loan_accounts():
 		"Balance Sheet",
 	)
 
+	create_account(
+		"Processing Fee Income Account",
+		"Direct Income - _TC",
+		"Income",
+		"Income Account",
+		"Profit and Loss",
+	)
+
+	create_account(
+		"Processing Fee Receivable Account",
+		"Loans and Advances (Assets) - _TC",
+		"Asset",
+		"Receivable",
+		"Balance Sheet",
+	)
+
+	create_account(
+		"Processing Fee Waiver Account",
+		"Direct Expenses - _TC",
+		"Expense",
+		"Expense Account",
+		"Profit and Loss",
+	)
+
 
 def create_account(account_name, parent_account, root_type, account_type, report_type, is_group=0):
 	if not frappe.db.exists("Account", {"account_name": account_name}):
@@ -1794,6 +2093,7 @@ def create_loan_product(
 				"repayment_method": repayment_method,
 				"repayment_periods": repayment_periods,
 				"write_off_amount": 100,
+				"excess_amount_acceptance_limit": 100,
 				"days_past_due_threshold_for_npa": days_past_due_threshold_for_npa,
 				"min_days_bw_disbursement_first_repayment": min_days_bw_disbursement_first_repayment,
 				"min_auto_closure_tolerance_amount": -100,
@@ -1809,6 +2109,36 @@ def create_loan_product(
 		loan_product.insert()
 
 		return loan_product
+
+
+def add_or_update_loan_charges(product_name):
+	loan_product = frappe.get_doc("Loan Product", product_name)
+
+	charge_type = "Processing Fee"
+
+	if not frappe.db.exists("Item", charge_type):
+		frappe.get_doc(
+			{
+				"doctype": "Item",
+				"item_code": charge_type,
+				"item_group": "Services",
+				"is_stock_item": 0,
+				"income_account": "Processing Fee Income Account - _TC",
+			}
+		).insert()
+
+	loan_product.loan_charges = []
+
+	loan_product.append(
+		"loan_charges",
+		{
+			"charge_type": charge_type,
+			"income_account": "Processing Fee Income Account - _TC",
+			"receivable_account": "Processing Fee Receivable Account - _TC",
+			"waiver_account": "Processing Fee Waiver Account - _TC",
+		},
+	)
+	loan_product.save()
 
 
 def create_loan_security_type():
@@ -1886,13 +2216,26 @@ def create_loan_security_price(loan_security, loan_security_price, uom, from_dat
 		).insert(ignore_permissions=True)
 
 
-def create_repayment_entry(loan, posting_date, paid_amount, repayment_type="Normal Repayment"):
+def create_repayment_entry(
+	loan,
+	posting_date,
+	paid_amount,
+	repayment_type="Normal Repayment",
+	loan_disbursement=None,
+	payable_charges=None,
+):
 	lr = frappe.new_doc("Loan Repayment")
 	lr.against_loan = loan
 	lr.company = "_Test Company"
 	lr.posting_date = posting_date or nowdate()
 	lr.amount_paid = paid_amount
 	lr.repayment_type = repayment_type
+	lr.loan_disbursement = loan_disbursement
+
+	if payable_charges:
+		for charge in payable_charges:
+			lr.append("payable_charges", charge)
+
 	lr.insert(ignore_permissions=True)
 
 	return lr

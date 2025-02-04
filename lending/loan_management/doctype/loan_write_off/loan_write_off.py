@@ -68,7 +68,10 @@ class LoanWriteOff(AccountsController):
 
 		process_daily_loan_demands(self.posting_date, loan=self.loan)
 		self.process_unbooked_interest()
-		make_loan_waivers(self.loan, self.posting_date)
+
+		if not self.is_settlement_write_off:
+			make_loan_waivers(self.loan, self.posting_date)
+
 		self.make_gl_entries()
 		self.cancel_suspense_entries()
 		write_off_charges(self.loan, self.posting_date, self.company, on_write_off=True)
