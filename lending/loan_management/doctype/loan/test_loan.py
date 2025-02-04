@@ -477,7 +477,7 @@ class TestLoan(IntegrationTestCase):
 			loan.name,
 			loan.loan_amount,
 			disbursement_date=add_months(posting_date, -1),
-			repayment_start_date=nowdate(),
+			repayment_start_date=posting_date,
 		)
 
 		process_daily_loan_demands(loan=loan.name, posting_date=posting_date)
