@@ -1756,7 +1756,6 @@ def create_loan_product(
 		loan_product_doc = frappe.get_doc("Loan Product", loan_product[0].name)
 	else:
 		loan_product_doc = frappe.new_doc("Loan Product")
-		loan_product_doc.insert()
 
 	loan_product_doc.company = "_Test Company"
 	loan_product_doc.product_code = product_code
