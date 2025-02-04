@@ -44,6 +44,7 @@ from lending.loan_management.doctype.process_loan_demand.process_loan_demand imp
 )
 from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_interest_accrual import (
 	process_loan_interest_accrual_for_loans,
+	schedule_accrual,
 )
 from lending.loan_management.doctype.process_loan_security_shortfall.process_loan_security_shortfall import (
 	create_process_loan_security_shortfall,
@@ -56,6 +57,7 @@ class TestLoan(IntegrationTestCase):
 		create_loan_accounts()
 		setup_loan_demand_offset_order()
 
+		set_loan_accrual_frequency("Daily")
 		simple_terms_loans = [
 			["Personal Loan", 500000, 8.4, "Monthly as per repayment start date"],
 			["Term Loan Product 1", 12000, 7.5, "Monthly as per repayment start date"],
@@ -1709,6 +1711,71 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(repayment.total_charges_paid, 500)
 		self.assertEqual(repayment.repayment_details[0].paid_amount, 500)
 
+	def test_accrual_background_job(self):
+		loan = create_loan(
+			"_Test Customer 1",
+			"Term Loan Product 4",
+			100000,
+			"Repay Over Number of Periods",
+			22,
+			repayment_start_date="2024-08-16",
+			posting_date="2024-08-16",
+			rate_of_interest=8.5,
+			applicant_type="Customer",
+		)
+		loan.submit()
+		# Daily accrual
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-08-16", repayment_start_date="2024-08-16"
+		)
+
+		set_loan_accrual_frequency("Daily")
+		process_loan_interest_accrual_for_loans(loan=loan.name, posting_date="2024-08-20")
+
+		loan_interest_accruals = get_loan_interest_accrual(
+			loan=loan, from_date="2024-08-16", to_date="2024-08-20"
+		)
+		expected_dates = [
+			"2024-08-16",
+			"2024-08-17",
+			"2024-08-18",
+			"2024-08-19",
+			"2024-08-20",
+		]
+		expected_dates = [getdate(i) for i in expected_dates]
+		self.assertEqual(loan_interest_accruals, expected_dates)
+
+		set_loan_accrual_frequency("Weekly")
+		process_loan_interest_accrual_for_loans(loan=loan.name, posting_date="2024-08-31")
+
+		loan_interest_accruals = get_loan_interest_accrual(
+			loan=loan, from_date="2024-08-21", to_date="2024-08-31"
+		)
+		expected_dates = [
+			"2024-08-25",
+			"2024-08-31",
+		]
+		expected_dates = [getdate(i) for i in expected_dates]
+
+		self.assertEqual(loan_interest_accruals, expected_dates)
+
+		set_loan_accrual_frequency("Monthly")
+		process_loan_interest_accrual_for_loans(loan=loan.name, posting_date="2024-11-01")
+
+		loan_interest_accruals = get_loan_interest_accrual(
+			loan=loan, from_date="2024-09-01", to_date="2024-11-05"
+		)
+		expected_dates = [
+			"2024-09-01",
+			"2024-09-15",
+			"2024-10-01",
+			"2024-10-15",
+			"2024-11-01",
+		]
+		expected_dates = [getdate(i) for i in expected_dates]
+
+		self.assertEqual(loan_interest_accruals, expected_dates)
+
 
 def add_or_update_loan_charges(product_name):
 	loan_product = frappe.get_doc("Loan Product", product_name)
@@ -2368,3 +2435,22 @@ def create_loan_write_off(loan, posting_date, write_off_amount=None):
 	loan_write_off.submit()
 
 	return loan_write_off
+
+
+def set_loan_accrual_frequency(loan_accrual_frequency):
+	frappe.db.set_value(
+		"Company",
+		"_Test Company",
+		"loan_accrual_frequency",
+		loan_accrual_frequency,
+	)
+
+
+def get_loan_interest_accrual(loan, from_date, to_date):
+	loan_interest_accruals = frappe.db.get_all(
+		"Loan Interest Accrual",
+		{"loan": loan, "docstatus": 1, "posting_date": ("between", [from_date, to_date])},
+		pluck="posting_date",
+		order_by="posting_date",
+	)
+	return loan_interest_accruals

@@ -4,7 +4,18 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, date_diff, flt, get_datetime, getdate, nowdate
+from frappe.utils import (
+	add_days,
+	add_months,
+	cint,
+	date_diff,
+	flt,
+	get_datetime,
+	get_first_day,
+	get_first_day_of_week,
+	getdate,
+	nowdate,
+)
 
 from erpnext.accounts.general_ledger import make_gl_entries
 from erpnext.controllers.accounts_controller import AccountsController
@@ -208,64 +219,39 @@ def calculate_accrual_amount_for_loans(
 	is_future_accrual=0,
 	accrual_date=None,
 	loan_disbursement=None,
+	loan_accrual_frequency=None,
 ):
 	from lending.loan_management.doctype.loan_repayment.loan_repayment import (
 		get_pending_principal_amount,
 	)
 
-	precision = cint(frappe.db.get_default("currency_precision")) or 2
-	total_payable_interest = 0
+	posting_date = getdate(posting_date)
+	accrual_date = getdate(accrual_date)
 
 	last_accrual_date = get_last_accrual_date(
 		loan.name, posting_date, "Normal Interest", loan_disbursement=loan_disbursement
 	)
+
 	if loan.is_term_loan:
-		overlapping_dates = get_overlapping_dates(
-			loan.name, last_accrual_date, posting_date, loan_disbursement=loan_disbursement
+		parent_wise_schedules = get_overlapping_dates(
+			loan.name,
+			last_accrual_date,
+			posting_date,
+			loan_accrual_frequency,
+			loan_disbursement=loan_disbursement,
 		)
-		for schedule in overlapping_dates:
-			last_accrual_date_for_schedule = (
-				get_last_accrual_date(
-					loan.name,
-					posting_date,
-					"Normal Interest",
-					loan_repayment_schedule=schedule.parent,
-					is_future_accrual=is_future_accrual,
-					loan_disbursement=loan_disbursement,
-				)
-				or last_accrual_date
-			)
 
-			pending_principal_amount = get_principal_amount_for_term_loan(
-				schedule.parent, schedule.payment_date
-			)
-
-			payable_interest = get_interest_for_term(
-				loan.company,
-				loan.rate_of_interest,
-				pending_principal_amount,
-				last_accrual_date_for_schedule,
-				schedule.payment_date,
-			)
-
-			if payable_interest > 0:
-				total_payable_interest += payable_interest
-				if not is_future_accrual:
-					make_loan_interest_accrual_entry(
-						loan.name,
-						pending_principal_amount,
-						flt(payable_interest, precision),
-						process_loan_interest,
-						last_accrual_date_for_schedule,
-						schedule.payment_date,
-						accrual_type,
-						"Normal Interest",
-						loan.rate_of_interest,
-						loan_repayment_schedule=schedule.parent,
-						accrual_date=accrual_date,
-					)
-			elif is_future_accrual:
-				last_accrual_date = schedule.payment_date
+		total_payable_interest = process_loan_interest_accrual_per_schedule(
+			parent_wise_schedules,
+			loan,
+			posting_date,
+			last_accrual_date,
+			is_future_accrual=is_future_accrual,
+			loan_disbursement=loan_disbursement,
+			process_loan_interest=process_loan_interest,
+			accrual_type=accrual_type,
+			accrual_date=accrual_date,
+		)
 	else:
 		no_of_days = date_diff(posting_date or nowdate(), last_accrual_date)
 		if no_of_days <= 0:
@@ -295,8 +281,110 @@ def calculate_accrual_amount_for_loans(
 			)
 
 			create_loan_demand(loan.name, posting_date, "Normal", "Interest", payable_interest)
+
 	if is_future_accrual:
 		return total_payable_interest
+
+
+def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_frequency):
+	last_accrual_date = getdate(last_accrual_date)
+	accrual_date = getdate(accrual_date)
+	out = []
+
+	if loan_accrual_frequency == "Daily":
+		current_date = add_days(last_accrual_date, 1)
+		day_delta = 1
+	elif loan_accrual_frequency == "Weekly":
+		current_date = add_days(get_first_day_of_week(last_accrual_date), 7)
+		day_delta = 7
+	elif loan_accrual_frequency == "Monthly":
+		current_date = add_months(get_first_day(last_accrual_date), 1)
+		day_delta = 1
+
+	while current_date <= accrual_date:
+		if loan_accrual_frequency in ("Daily", "Weekly"):
+			out.append(current_date)
+			current_date = add_days(current_date, day_delta)
+		elif loan_accrual_frequency == "Monthly":
+			out.append(current_date)
+			current_date = add_months(current_date, 1)
+	return out
+
+
+# Continuation of calculate_accrual_amount_for_loans for term loans
+# Broken for reusability
+def process_loan_interest_accrual_per_schedule(
+	parent_wise_schedules,
+	loan,
+	posting_date,
+	last_accrual_date,
+	is_future_accrual=False,
+	loan_disbursement=None,
+	process_loan_interest=None,
+	accrual_type=None,
+	accrual_date=None,
+):
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
+	total_payable_interest = 0
+
+	for parent in parent_wise_schedules:
+		for payment_date in parent_wise_schedules[parent]:
+			last_accrual_date_for_schedule = (
+				get_last_accrual_date(
+					loan.name,
+					posting_date,
+					"Normal Interest",
+					loan_repayment_schedule=parent,
+					is_future_accrual=is_future_accrual,
+					loan_disbursement=loan_disbursement,
+				)
+				or last_accrual_date
+			)
+
+			pending_principal_amount = get_principal_amount_for_term_loan(parent, payment_date)
+			payable_interest = get_interest_for_term(
+				loan.company,
+				loan.rate_of_interest,
+				pending_principal_amount,
+				last_accrual_date_for_schedule,
+				payment_date,
+			)
+
+			if payable_interest > 0:
+				total_payable_interest = payable_interest
+				if not is_future_accrual:
+					make_loan_interest_accrual_entry(
+						loan.name,
+						pending_principal_amount,
+						flt(payable_interest, precision),
+						process_loan_interest,
+						last_accrual_date_for_schedule,
+						payment_date,
+						accrual_type,
+						"Normal Interest",
+						loan.rate_of_interest,
+						loan_repayment_schedule=parent,
+						accrual_date=accrual_date,
+					)
+			elif is_future_accrual:
+				last_accrual_date = payment_date
+
+	return total_payable_interest
+
+
+def is_posting_date_accrual_day(loan_accrual_frequency, posting_date):
+	day_of_the_month = getdate(posting_date).day
+	weekday = getdate(posting_date).weekday()
+	match loan_accrual_frequency:
+		case "Daily":
+			return True
+		case "Weekly":
+			if weekday == 0:
+				return True
+		case "Monthly":
+			if day_of_the_month == 1:
+				return True
+	return False
 
 
 def get_interest_for_term(company, rate_of_interest, pending_principal_amount, from_date, to_date):
@@ -350,61 +438,23 @@ def make_loan_interest_accrual_entry(
 		loan_interest_accrual.submit()
 
 
-def get_overlapping_dates(loan, last_accrual_date, posting_date, loan_disbursement=None):
-	filters = {"loan": loan, "docstatus": 1, "status": "Active", "posting_date": ("<=", posting_date)}
-
-	if loan_disbursement:
-		filters["loan_disbursement"] = loan_disbursement
-
-	schedules_details = frappe.db.get_all(
-		"Loan Repayment Schedule",
-		filters=filters,
-		fields=["name", "maturity_date"],
+def get_overlapping_dates(
+	loan, last_accrual_date, posting_date, loan_accrual_frequency, loan_disbursement=None
+):
+	parent_wise_schedules, maturity_map = get_parent_wise_dates(
+		loan, last_accrual_date, posting_date, loan_disbursement=loan_disbursement
 	)
 
-	schedules = [d.name for d in schedules_details]
-
-	freeze_date = frappe.db.get_value("Loan", loan, "freeze_date")
-	if freeze_date and getdate(freeze_date) < getdate(posting_date):
-		posting_date = freeze_date
-
-	schedule_filters = {
-		"parent": ("in", schedules),
-		"payment_date": ("between", [last_accrual_date, posting_date]),
-	}
-
-	if len(schedules) == 1:
-		schedule_filters["parent"] = schedules[0]
-
-	schedule_dates = (
-		frappe.db.get_all(
-			"Repayment Schedule",
-			filters=schedule_filters,
-			fields=["payment_date", "parent"],
-			order_by="payment_date",
-		)
-		or []
+	accrual_frequency_breaks = get_accrual_frequency_breaks(
+		add_days(last_accrual_date, -1), posting_date, loan_accrual_frequency
 	)
+	# Merge accrual_frequency_breaks into repayment_schedule breaks and get all unique dates
+	for schedule_parent in parent_wise_schedules:
+		parent_wise_schedules[schedule_parent].extend(accrual_frequency_breaks)
+		parent_wise_schedules[schedule_parent] = list(set(parent_wise_schedules[schedule_parent]))
+		parent_wise_schedules[schedule_parent].sort()
 
-	for schedule_date in schedule_dates:
-		schedule_date["payment_date"] = add_days(schedule_date.payment_date, -1)
-
-	maturity_map = {}
-	for schedule in schedules_details:
-		to_accrual_date = posting_date
-		maturity_date = schedule.get("maturity_date")
-		maturity_map[schedule.name] = maturity_date
-		if maturity_date and getdate(maturity_date) <= getdate(posting_date):
-			to_accrual_date = add_days(maturity_date, -1)
-
-		schedule_dates.append(frappe._dict({"payment_date": to_accrual_date, "parent": schedule.name}))
-
-	for schedule_date in schedule_dates:
-		maturity_date = maturity_map.get(schedule_date.parent)
-		if maturity_date and getdate(schedule_date.payment_date) >= getdate(maturity_date):
-			schedule_date["payment_date"] = add_days(maturity_date, -1)
-
-	return schedule_dates
+	return parent_wise_schedules
 
 
 def get_principal_amount_for_term_loan(repayment_schedule, date):
@@ -587,6 +637,7 @@ def make_accrual_interest_entry_for_loans(
 	accrual_type="Regular",
 	accrual_date=None,
 	limit=0,
+	company=None,
 ):
 
 	loan_doc = frappe.qb.DocType("Loan")
@@ -631,11 +682,13 @@ def make_accrual_interest_entry_for_loans(
 	if loan_product:
 		query = query.where(loan_doc.loan_product == loan_product)
 
+	if company:
+		query = query.where(loan_doc.company == company)
+
 	if limit:
 		query = query.limit(limit)
 
 	open_loans = query.run(as_dict=1)
-
 	if loan:
 		process_interest_accrual_batch(
 			open_loans, posting_date, process_loan_interest, accrual_type, accrual_date
@@ -666,6 +719,7 @@ def process_interest_accrual_batch(
 	loans, posting_date, process_loan_interest, accrual_type, accrual_date, via_background_job=False
 ):
 	for loan in loans:
+		loan_accrual_frequency = get_loan_accrual_frequency(loan.company)
 		try:
 			calculate_penal_interest_for_loans(
 				loan,
@@ -681,6 +735,7 @@ def process_interest_accrual_batch(
 				process_loan_interest=process_loan_interest,
 				accrual_type=accrual_type,
 				accrual_date=accrual_date,
+				loan_accrual_frequency=loan_accrual_frequency,
 			)
 
 			if len(loans) > 1:
@@ -922,3 +977,75 @@ def reverse_loan_interest_accruals(
 			)
 
 	return accruals
+
+
+def get_loan_accrual_frequency(company):
+	company_doc = frappe.qb.DocType("Company")
+	query = (
+		frappe.qb.from_(company_doc)
+		.select(company_doc.loan_accrual_frequency)
+		.where(company_doc.name == company)
+	)
+	loan_accrual_frequency = query.run(as_dict=True)[0]["loan_accrual_frequency"]
+
+	if not loan_accrual_frequency:
+		frappe.throw(_("Loan Accrual Frequency not set for company {0}").format(frappe.bold(company)))
+
+	return loan_accrual_frequency
+
+
+def get_parent_wise_dates(loan, last_accrual_date, posting_date, loan_disbursement=None):
+	filters = {"loan": loan, "docstatus": 1, "status": "Active", "posting_date": ("<=", posting_date)}
+
+	if loan_disbursement:
+		filters["loan_disbursement"] = loan_disbursement
+
+	schedules_details = frappe.db.get_all(
+		"Loan Repayment Schedule",
+		filters=filters,
+		fields=["name", "maturity_date"],
+	)
+
+	schedules = [d.name for d in schedules_details]
+
+	freeze_date = frappe.db.get_value("Loan", loan, "freeze_date")
+	if freeze_date and getdate(freeze_date) < getdate(posting_date):
+		posting_date = freeze_date
+	schedule_filters = {
+		"parent": ("in", schedules),
+		"payment_date": ("between", [last_accrual_date, posting_date]),
+	}
+
+	if len(schedules) == 1:
+		schedule_filters["parent"] = schedules[0]
+
+	schedule_dates = (
+		frappe.db.get_all(
+			"Repayment Schedule",
+			filters=schedule_filters,
+			fields=["payment_date", "parent"],
+			order_by="payment_date",
+		)
+		or []
+	)
+	parent_wise_schedules = frappe._dict()
+	for schedule_date in schedule_dates:
+		parent_wise_schedules.setdefault(schedule_date.parent, [])
+		parent_wise_schedules[schedule_date.parent].append(add_days(schedule_date.payment_date, -1))
+	maturity_map = add_maturity_breaks(parent_wise_schedules, schedules_details, posting_date)
+
+	return parent_wise_schedules, maturity_map
+
+
+def add_maturity_breaks(parent_wise_schedules, schedules_details, posting_date):
+	maturity_map = {}
+	for schedule in schedules_details:
+		parent_wise_schedules.setdefault(schedule.name, [])
+		to_accrual_date = posting_date
+		maturity_date = schedule.get("maturity_date")
+		maturity_map[schedule.name] = maturity_date
+		if maturity_date and getdate(maturity_date) <= getdate(posting_date):
+			to_accrual_date = add_days(maturity_date, -1)
+		parent_wise_schedules[schedule.name].append(getdate(to_accrual_date))
+
+	return maturity_map

@@ -12,6 +12,7 @@
   "applicant",
   "applicant_name",
   "loan_application",
+  "repost_days_past_due_log",
   "column_break_3",
   "company",
   "posting_date",
@@ -661,12 +662,18 @@
    "fieldtype": "Date",
    "label": "Settlement Date",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "repost_days_past_due_log",
+   "fieldtype": "Int",
+   "label": "Repost"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-31 22:50:42.962589",
+ "modified": "2025-02-03 00:52:13.170705",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan",

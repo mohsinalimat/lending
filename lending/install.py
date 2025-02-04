@@ -71,6 +71,13 @@ LOAN_CUSTOM_FIELDS = {
 			"non_negative": 1,
 		},
 		{
+			"fieldname": "loan_accrual_frequency",
+			"label": "Loan Accrual Frequency",
+			"fieldtype": "Select",
+			"options": "Daily\nWeekly\nMonthly",
+			"insert_after": "min_days_bw_disbursement_first_repayment",
+		},
+		{
 			"fieldname": "loan_column_break",
 			"fieldtype": "Column Break",
 			"insert_after": "min_days_bw_disbursement_first_repayment",
