@@ -1140,24 +1140,22 @@ class LoanRepayment(AccountsController):
 			amount_paid = self.allocate_charges(amount_paid, amounts.get("unpaid_demands"))
 		else:
 			if loan_status == "Written Off":
-				allocation_order = frappe.db.get_value(
-					"Company", self.company, "collection_offset_sequence_for_written_off_asset"
+				allocation_order = self.get_allocation_order(
+					"Collection Offset Sequence for Written Off Asset"
 				)
 			elif (
 				self.repayment_type in ("Partial Settlement", "Full Settlement", "Principal Adjustment")
 				or loan_status == "Settled"
 			):
-				allocation_order = frappe.db.get_value(
-					"Company", self.company, "collection_offset_sequence_for_settlement_collection"
+				allocation_order = self.get_allocation_order(
+					"Collection Offset Sequence for Settlement Collection"
 				)
 			elif self.is_npa:
-				allocation_order = frappe.db.get_value(
-					"Company", self.company, "collection_offset_sequence_for_sub_standard_asset"
+				allocation_order = self.get_allocation_order(
+					"Collection Offset Sequence for Sub Standard Asset"
 				)
 			else:
-				allocation_order = frappe.db.get_value(
-					"Company", self.company, "collection_offset_sequence_for_standard_asset"
-				)
+				allocation_order = self.get_allocation_order("Collection Offset Sequence for Standard Asset")
 
 			if self.shortfall_amount and self.amount_paid > self.shortfall_amount:
 				self.principal_amount_paid = self.shortfall_amount
@@ -1783,6 +1781,24 @@ class LoanRepayment(AccountsController):
 			remarks += " with reference no. {}".format(self.reference_number)
 
 		return remarks
+
+	def get_allocation_order(self, offset_name):
+		offset_mapping = {
+			"Collection Offset Sequence for Standard Asset": "collection_offset_sequence_for_standard_asset",
+			"Collection Offset Sequence for Sub Standard Asset": "collection_offset_sequence_for_sub_standard_asset",
+			"Collection Offset Sequence for Written Off Asset": "collection_offset_sequence_for_written_off_asset",
+			"Collection Offset Sequence for Settlement Collection": "collection_offset_sequence_for_settlement_collection",
+		}
+		offset_field = offset_mapping[offset_name]
+
+		allocation_order = frappe.db.get_value("Loan Product", self.loan_product, offset_field)
+		if not allocation_order:
+			allocation_order = frappe.db.get_value("Company", self.company, offset_field)
+
+		if not allocation_order:
+			frappe.throw(_(f"Please set {offset_name} in either Company or Loan Product"))
+
+		return allocation_order
 
 
 def create_repayment_entry(
