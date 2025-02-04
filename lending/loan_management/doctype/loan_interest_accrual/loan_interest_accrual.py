@@ -270,15 +270,12 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 	elif loan_accrual_frequency == "Weekly":
 		current_date = add_days(get_first_day_of_week(last_accrual_date), 7)
 		day_delta = 7
-	elif loan_accrual_frequency == "Bi-weekly":
-		current_date = add_days(get_first_day_of_week(last_accrual_date), 7)
-		day_delta = 14
 	elif loan_accrual_frequency == "Monthly":
 		current_date = add_months(get_first_day(last_accrual_date), 1)
 		day_delta = 1
 
 	while current_date <= accrual_date:
-		if loan_accrual_frequency in ("Daily", "Weekly", "Bi-weekly"):
+		if loan_accrual_frequency in ("Daily", "Weekly"):
 			out.append(current_date)
 			current_date = add_days(current_date, day_delta)
 		elif loan_accrual_frequency == "Monthly":
@@ -357,15 +354,6 @@ def is_posting_date_accrual_day(loan_accrual_frequency, posting_date):
 		case "Weekly":
 			if weekday == 0:
 				return True
-		case "Bi-weekly":
-			# More thinking required
-			# May or may not work
-			# The logic for week_of_the_month assumes it's Monday, so should only be used
-			# in this specific circumstance
-			week_of_the_month = ((day_of_the_month - 1) // 7) % 2
-			if weekday == 0 and (week_of_the_month == 1 or week_of_the_month == 3):
-				return True
-			pass
 		case "Monthly":
 			if day_of_the_month == 1:
 				return True
