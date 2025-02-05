@@ -1157,10 +1157,11 @@ class LoanRepayment(AccountsController):
 			else:
 				allocation_order = self.get_allocation_order("Collection Offset Sequence for Standard Asset")
 
-			if self.shortfall_amount and self.amount_paid > self.shortfall_amount:
-				self.principal_amount_paid = self.shortfall_amount
-			elif self.shortfall_amount:
-				self.principal_amount_paid = self.amount_paid
+			if self.shortfall_amount:
+				if self.amount_paid > self.shortfall_amount:
+					self.principal_amount_paid = self.shortfall_amount
+				else:
+					self.principal_amount_paid = self.amount_paid
 
 			amount_paid = self.apply_allocation_order(
 				allocation_order, amount_paid, amounts.get("unpaid_demands"), status=loan_status
