@@ -263,7 +263,8 @@ class LoanRepayment(AccountsController):
 
 		pending_principal_amount = get_pending_principal_amount(loan)
 		if not loan.is_secured_loan and pending_principal_amount <= 0:
-			loan.update({"status": "Loan Closure Requested"})
+			status = "Closed" if loan.applicant_type == "Employee" else "Loan Closure Requested"
+			loan.update({"status": status})
 
 		for payment in self.repayment_details:
 			frappe.db.sql(
