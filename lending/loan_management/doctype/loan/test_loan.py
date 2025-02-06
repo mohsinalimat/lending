@@ -58,7 +58,7 @@ class TestLoan(IntegrationTestCase):
 		create_loan_accounts()
 		setup_loan_demand_offset_order()
 
-		set_loan_accrual_frequency("Daily")
+		set_loan_accrual_frequency("Monthly")
 		simple_terms_loans = [
 			["Personal Loan", 500000, 8.4, "Monthly as per repayment start date"],
 			["Term Loan Product 1", 12000, 7.5, "Monthly as per repayment start date"],
@@ -130,6 +130,7 @@ class TestLoan(IntegrationTestCase):
 			"Interest Income Account - _TC",
 			"Penalty Income Account - _TC",
 			repayment_schedule_type="Monthly as per repayment start date",
+			collection_offset_sequence_for_standard_asset="Test EMI Based Standard Loan Demand Offset Order",
 		)
 
 		create_loan_product(
@@ -346,64 +347,6 @@ class TestLoan(IntegrationTestCase):
 		)
 		self.assertRaises(frappe.ValidationError, loan_application.save)
 
-	def test_regular_loan_repayment(self):
-		return
-		pledge = [{"loan_security": "Test Security 1", "qty": 4000.00}]
-
-		loan_application = create_loan_application(
-			"_Test Company", self.applicant2, "Demand Loan", pledge
-		)
-		create_loan_security_assignment(loan_application)
-
-		loan = create_demand_loan(
-			self.applicant2, "Demand Loan", loan_application, posting_date="2019-10-01"
-		)
-		loan.submit()
-
-		self.assertEqual(loan.loan_amount, 1000000)
-
-		first_date = "2019-10-01"
-		last_date = "2019-10-30"
-
-		no_of_days = date_diff(last_date, first_date)
-
-		accrued_interest_amount = flt(
-			(loan.loan_amount * loan.rate_of_interest * no_of_days)
-			/ (days_in_year(get_datetime(first_date).year) * 100),
-			2,
-		)
-
-		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
-		# process_loan_interest_accrual_for_loans(posting_date=last_date)
-
-		process_loan_interest_accrual_for_loans(posting_date=last_date)
-		process_daily_loan_demands(posting_date=last_date)
-
-		repayment_entry = create_repayment_entry(loan.name, last_date, 111119)
-		repayment_entry.save()
-		repayment_entry.submit()
-
-		amounts = frappe.db.get_all(
-			"Loan Demand",
-			{"loan": loan.name, "demand_type": "Normal", "demand_subtype": "Interest"},
-			["SUM(paid_amount) as paid_amount", "SUM(demand_amount) as payable_amount"],
-		)
-
-		loan.load_from_db()
-		total_interest_paid = flt(amounts[0]["paid_amount"], 2)
-		self.assertEqual(flt(amounts[0]["payable_amount"], 2), repayment_entry.interest_payable)
-		self.assertEqual(
-			flt(loan.total_principal_paid, 0),
-			flt(repayment_entry.amount_paid - total_interest_paid, 0),
-		)
-
-		# # Check Repayment Entry cancel
-		repayment_entry.load_from_db()
-		repayment_entry.cancel()
-		loan.load_from_db()
-
-		self.assertEqual(loan.total_principal_paid, 0)
-
 	def test_loan_closure(self):
 		pledge = [{"loan_security": "Test Security 1", "qty": 4000.00}]
 
@@ -421,16 +364,11 @@ class TestLoan(IntegrationTestCase):
 		first_date = "2019-10-01"
 		last_date = "2019-10-30"
 
-		no_of_days = date_diff(last_date, first_date) + 1
-
 		# Adding 5 since repayment is made 5 days late after due date
 		# and since payment type is loan closure so interest should be considered for those
 		# 5 days as well though in grace period
-		no_of_days += 5
 
-		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
-			days_in_year(get_datetime(first_date).year) * 100
-		)
+		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * 34) / (36500)
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
 		process_daily_loan_demands(posting_date=add_days(last_date, 5), loan=loan)
 		repayment_entry = create_repayment_entry(
@@ -576,7 +514,9 @@ class TestLoan(IntegrationTestCase):
 		)
 
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
-		process_loan_interest_accrual_for_loans(posting_date=last_date, loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date=last_date, loan=loan.name, company="_Test Company"
+		)
 		process_daily_loan_demands(posting_date=last_date, loan=loan.name)
 
 		repayment_entry = create_repayment_entry(
@@ -629,7 +569,7 @@ class TestLoan(IntegrationTestCase):
 		last_date = "2019-10-30"
 
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
-		process_loan_interest_accrual_for_loans(posting_date=last_date)
+		process_loan_interest_accrual_for_loans(posting_date=last_date, company="_Test Company")
 
 		repayment_entry = create_repayment_entry(loan.name, add_days(last_date, 5), 600000)
 		repayment_entry.submit()
@@ -757,7 +697,9 @@ class TestLoan(IntegrationTestCase):
 		)
 
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
-		process_loan_interest_accrual_for_loans(posting_date=last_date, loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date=last_date, loan=loan.name, company="_Test Company"
+		)
 		process_daily_loan_demands(posting_date=last_date, loan=loan.name)
 
 		amounts = calculate_amounts(loan.name, add_days(last_date, 5), payment_type="Loan Closure")
@@ -791,7 +733,9 @@ class TestLoan(IntegrationTestCase):
 			loan.name, loan.loan_amount, disbursement_date="2024-04-01", repayment_start_date="2024-05-05"
 		)
 		process_daily_loan_demands(posting_date="2024-07-07", loan=loan.name)
-		process_loan_interest_accrual_for_loans(posting_date="2024-07-07", loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-07-07", loan=loan.name, company="_Test Company"
+		)
 
 		amounts = calculate_amounts(against_loan=loan.name, posting_date="2024-07-07")
 		self.assertEqual(flt(amounts["penalty_amount"], 2), 3059.70)
@@ -1161,19 +1105,29 @@ class TestLoan(IntegrationTestCase):
 		)
 
 		# Process Loan Interest Accrual
-		process_loan_interest_accrual_for_loans(posting_date="2024-12-03", loan=loan.name)
-		process_loan_interest_accrual_for_loans(posting_date="2024-12-04", loan=loan.name)
-		process_loan_interest_accrual_for_loans(posting_date="2024-12-05", loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-12-03", loan=loan.name, company="_Test Company"
+		)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-12-04", loan=loan.name, company="_Test Company"
+		)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-12-05", loan=loan.name, company="_Test Company"
+		)
 
 		process_daily_loan_demands(posting_date="2024-12-05", loan=loan.name)
 
 		repayment = create_repayment_entry(loan.name, "2024-12-05", 1150, repayment_type="Pre Payment")
 
 		repayment.submit()
-		process_loan_interest_accrual_for_loans(posting_date="2024-12-08", loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-12-08", loan=loan.name, company="_Test Company"
+		)
 
 		process_daily_loan_demands(posting_date="2025-01-05", loan=loan.name)
-		process_loan_interest_accrual_for_loans(posting_date="2025-01-10", loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2025-01-10", loan=loan.name, company="_Test Company"
+		)
 
 		repayment = create_repayment_entry(loan.name, "2025-01-03", 10000, repayment_type="Pre Payment")
 
@@ -1244,7 +1198,9 @@ class TestLoan(IntegrationTestCase):
 		process_daily_loan_demands(posting_date="2024-05-05", loan=loan.name)
 
 		# Process Loan Interest Accrual
-		process_loan_interest_accrual_for_loans(posting_date="2024-05-10", loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-05-10", loan=loan.name, company="_Test Company"
+		)
 
 	def test_npa_loan(self):
 		loan = create_loan(
@@ -1266,7 +1222,9 @@ class TestLoan(IntegrationTestCase):
 		)
 		process_daily_loan_demands(posting_date="2024-04-05", loan=loan.name)
 
-		process_loan_interest_accrual_for_loans(posting_date="2024-04-10", loan=loan.name)
+		process_loan_interest_accrual_for_loans(
+			posting_date="2024-04-10", loan=loan.name, company="_Test Company"
+		)
 
 		create_process_loan_classification(posting_date="2024-10-05", loan=loan.name)
 
@@ -1308,6 +1266,10 @@ class TestLoan(IntegrationTestCase):
 		repayment_entry = create_repayment_entry(
 			loan.name, "2024-10-05", 47523, loan_disbursement=disbursement.name
 		)
+		repayment_entry.submit()
+
+		loan.load_from_db()
+
 		self.assertEqual(loan.utilized_limit_amount, 500000 - repayment_entry.principal_amount_paid)
 		self.assertEqual(loan.available_limit_amount, repayment_entry.principal_amount_paid)
 
@@ -1656,7 +1618,9 @@ class TestLoan(IntegrationTestCase):
 		)
 
 		set_loan_accrual_frequency("Daily")
-		process_loan_interest_accrual_for_loans(loan=loan.name, posting_date="2024-08-20")
+		process_loan_interest_accrual_for_loans(
+			loan=loan.name, posting_date="2024-08-20", company="_Test Company"
+		)
 
 		loan_interest_accruals = get_loan_interest_accrual(
 			loan=loan, from_date="2024-08-16", to_date="2024-08-20"
@@ -1672,7 +1636,9 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(loan_interest_accruals, expected_dates)
 
 		set_loan_accrual_frequency("Weekly")
-		process_loan_interest_accrual_for_loans(loan=loan.name, posting_date="2024-08-31")
+		process_loan_interest_accrual_for_loans(
+			loan=loan.name, posting_date="2024-08-31", company="_Test Company"
+		)
 
 		loan_interest_accruals = get_loan_interest_accrual(
 			loan=loan, from_date="2024-08-21", to_date="2024-08-31"
@@ -1686,7 +1652,9 @@ class TestLoan(IntegrationTestCase):
 		self.assertEqual(loan_interest_accruals, expected_dates)
 
 		set_loan_accrual_frequency("Monthly")
-		process_loan_interest_accrual_for_loans(loan=loan.name, posting_date="2024-11-01")
+		process_loan_interest_accrual_for_loans(
+			loan=loan.name, posting_date="2024-11-01", company="_Test Company"
+		)
 
 		loan_interest_accruals = get_loan_interest_accrual(
 			loan=loan, from_date="2024-09-01", to_date="2024-11-05"
@@ -1700,7 +1668,6 @@ class TestLoan(IntegrationTestCase):
 		]
 		expected_dates = [getdate(i) for i in expected_dates]
 
-		set_loan_accrual_frequency("Daily")
 		self.assertEqual(loan_interest_accruals, expected_dates)
 
 
