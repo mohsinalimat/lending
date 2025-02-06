@@ -499,8 +499,8 @@ class TestLoan(IntegrationTestCase):
 			["SUM(paid_amount) as paid_amount"],
 		)
 
-		self.assertEqual(amounts[0].paid_amount, 11465.75)
-		self.assertEqual(repayment_entry.principal_amount_paid, 78303.00)
+		self.assertEqual(flt(amounts[0].paid_amount, 2), 11465.75)
+		self.assertEqual(flt(repayment_entry.principal_amount_paid, 2), 78303.00)
 
 	def test_security_shortfall(self):
 		frappe.db.sql(
