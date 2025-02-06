@@ -2007,6 +2007,7 @@ def create_loan_product(
 	collection_offset_sequence_for_settlement_collection=None,
 ):
 
+	loan_product = frappe.get_all("Loan Product", filters={"product_name": product_name}, limit=1)
 	if loan_product:
 		loan_product_doc = frappe.get_doc("Loan Product", loan_product[0].name)
 	else:
