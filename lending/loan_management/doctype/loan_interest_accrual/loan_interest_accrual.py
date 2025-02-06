@@ -232,6 +232,8 @@ def calculate_accrual_amount_for_loans(
 		loan.name, posting_date, "Normal Interest", loan_disbursement=loan_disbursement
 	)
 
+	if loan_accrual_frequency == None:
+		loan_accrual_frequency = frappe.db.get_value("Company", loan.company, "loan_accrual_frequency")
 	if loan.is_term_loan:
 		parent_wise_schedules = get_overlapping_dates(
 			loan.name,
@@ -298,6 +300,8 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 	elif loan_accrual_frequency == "Monthly":
 		current_date = add_months(get_first_day(last_accrual_date), 1)
 		day_delta = 1
+	else:
+		frappe.throw(_("Loan Accrual Frequency not set in the Company DocType."))
 
 	while current_date <= accrual_date:
 		if loan_accrual_frequency in ("Daily", "Weekly"):
