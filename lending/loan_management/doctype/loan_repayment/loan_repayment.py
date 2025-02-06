@@ -689,7 +689,7 @@ class LoanRepayment(AccountsController):
 			create_loan_demand(
 				self.against_loan,
 				self.posting_date,
-				"EMI",
+				"EMI" if self.is_term_loan else "Normal",
 				"Interest",
 				flt(self.unbooked_interest_paid, precision),
 				paid_amount=self.unbooked_interest_paid,
@@ -801,7 +801,7 @@ class LoanRepayment(AccountsController):
 			create_loan_demand(
 				self.against_loan,
 				self.posting_date,
-				"EMI",
+				"EMI" if self.is_term_loan else "Normal",
 				"Interest",
 				flt(unpaid_unbooked_interest, precision),
 			)
@@ -1201,10 +1201,6 @@ class LoanRepayment(AccountsController):
 			pending_interest = flt(amounts.get("unaccrued_interest")) + flt(
 				amounts.get("unbooked_interest")
 			)
-			if not self.is_term_loan:
-				pending_interest += flt(
-					get_accrued_interest(posting_date=self.posting_date, loan=self.against_loan), precision
-				)
 			if pending_interest > 0:
 				if pending_interest > amount_paid:
 					self.total_interest_paid += amount_paid
@@ -2067,7 +2063,6 @@ def process_amount_for_loan(
 			charges += demand.outstanding_amount
 
 	pending_principal_amount = get_pending_principal_amount(loan, loan_disbursement=loan_disbursement)
-
 	unbooked_interest, accrued_interest = get_unbooked_interest(
 		loan.name, posting_date, loan_disbursement=loan_disbursement, last_demand_date=last_demand_date
 	)

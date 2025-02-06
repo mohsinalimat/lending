@@ -792,35 +792,14 @@ class TestLoan(IntegrationTestCase):
 
 		amounts = calculate_amounts(against_loan=loan.name, posting_date="2024-07-07")
 		self.assertEqual(flt(amounts["penalty_amount"], 2), 3059.70)
-		# loan, amounts = create_loan_scenario_for_penalty(self)
-		# # 30 days - grace period
-		# penalty_days = 30 - 4
-		# penalty_applicable_amount = flt(amounts["interest_amount"])
-		# penalty_amount = flt((((penalty_applicable_amount * 25) / (100 * 365)) * penalty_days), 2)
-		# process = process_loan_interest_accrual_for_loans(posting_date="2019-11-19", loan=loan.name)
-		# #frappe.throw(f"{}")
-		# calculated_penalty_amount = frappe.db.get_value(
-		# 	"Loan Interest Accrual",
-		# 	{"process_loan_interest_accrual": process, "loan": loan.name},
-		# 	"interest_amount",
-		# )
-		# penalty_interest_rate = frappe.db.get_value("Loan Product", loan.loan_product, ["penalty_interest_rate"])
-		# #calculated_penalty_amount = calculated_penalty_amount * (penalty_interest_rate / 100) * penalty_days / 365
-		# self.assertEqual(loan.loan_amount, 1000000)
-		# self.assertEqual(calculated_penalty_amount, penalty_amount)
 
 	def test_loan_write_off_limit(self):
 		loan = create_secured_demand_loan(self.applicant2)
 		self.assertEqual(loan.loan_amount, 1000000)
-		repayment_date = add_days("2019-10-30", 5)
-		no_of_days = date_diff(repayment_date, add_days("2019-10-01", 1))
+		repayment_date = "2019-11-01"
+		no_of_days = date_diff(repayment_date, "2019-10-01")
 		# no_of_days = 34
-
-		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
-			days_in_year(get_datetime("2019-10-01").year) * 100
-		)
-
-		process_daily_loan_demands(posting_date="2019-10-01", loan=loan.name)
+		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * 32) / (36500)
 		process_daily_loan_demands(posting_date="2019-11-01", loan=loan.name)
 		# repay 50 less so that it can be automatically written off
 		repayment_entry = create_repayment_entry(
