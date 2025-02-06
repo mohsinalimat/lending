@@ -228,6 +228,8 @@ def calculate_accrual_amount_for_loans(
 	posting_date = getdate(posting_date)
 	accrual_date = getdate(accrual_date)
 
+	total_payable_interest = 0
+
 	last_accrual_date = get_last_accrual_date(
 		loan.name, posting_date, "Normal Interest", loan_disbursement=loan_disbursement
 	)

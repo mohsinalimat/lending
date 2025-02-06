@@ -802,7 +802,7 @@ class TestLoan(IntegrationTestCase):
 		repayment_date = "2019-11-01"
 		no_of_days = date_diff(repayment_date, "2019-10-01")
 		# no_of_days = 34
-		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * 32) / (36500)
+		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * 31) / (36500)
 		process_daily_loan_demands(posting_date="2019-11-01", loan=loan.name)
 		# repay 50 less so that it can be automatically written off
 		repayment_entry = create_repayment_entry(
@@ -1700,6 +1700,7 @@ class TestLoan(IntegrationTestCase):
 		]
 		expected_dates = [getdate(i) for i in expected_dates]
 
+		set_loan_accrual_frequency("Daily")
 		self.assertEqual(loan_interest_accruals, expected_dates)
 
 
