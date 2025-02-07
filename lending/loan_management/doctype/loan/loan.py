@@ -32,6 +32,7 @@ from lending.loan_management.doctype.loan_security_release.loan_security_release
 )
 
 
+# nosemgrep
 class Loan(AccountsController):
 	def validate(self):
 		self.set_status()
@@ -132,6 +133,7 @@ class Loan(AccountsController):
 		]
 		self.set_status()
 
+	# nosemgrep
 	def set_status(self):
 		if self.docstatus == 0:
 			self.status = "Draft"

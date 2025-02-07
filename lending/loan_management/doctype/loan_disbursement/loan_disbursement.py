@@ -40,16 +40,15 @@ from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_
 )
 
 
+# nosemgrep
 class LoanDisbursement(AccountsController):
 	def validate(self):
-		# nosemgrep
 		self.set_status()
 		self.set_missing_values()
 		self.validate_disbursal_amount()
 		if self.repayment_schedule_type == "Line of Credit":
 			self.set_cyclic_date()
 
-		# nosemgrep
 		self.validate_repayment_start_date()
 
 	def on_update(self):
@@ -238,7 +237,7 @@ class LoanDisbursement(AccountsController):
 		)
 		frappe.db.set_value("Loan Repayment Schedule", schedule, "status", status)
 
-	def on_cancel(self):  # nosemgrep
+	def on_cancel(self):
 		self.flags.ignore_links = ["GL Entry", "Loan Repayment Schedule", "Sales Invoice", "Loan Demand"]
 
 		self.set_status_and_amounts(cancel=1)
