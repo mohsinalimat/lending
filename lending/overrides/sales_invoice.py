@@ -1,6 +1,7 @@
 import json
 
 import frappe
+from frappe import _
 from frappe.utils import flt
 
 from erpnext.accounts.general_ledger import make_gl_entries
@@ -52,7 +53,7 @@ def update_waived_amount_in_demand(self, method=None):
 
 			if demand_details:
 				if flt(demand_details.outstanding_amount) - flt(waived_amount) < 0:
-					frappe.throw("Waived amount cannot be greater than outstanding amount")
+					frappe.throw(_("Waived amount cannot be greater than outstanding amount"))
 
 				if flt(demand_details.outstanding_amount) > flt(waived_amount):
 					loan_demand = frappe.qb.DocType("Loan Demand")

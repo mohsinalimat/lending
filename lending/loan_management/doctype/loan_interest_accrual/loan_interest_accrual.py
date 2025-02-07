@@ -439,7 +439,6 @@ def make_loan_interest_accrual_entry(
 		loan_interest_accrual.loan_repayment_schedule_detail = loan_repayment_schedule_detail
 
 		loan_interest_accrual.save()
-		# frappe.throw(f"{loan_interest_accrual.docstatus}")
 		loan_interest_accrual.submit()
 
 
