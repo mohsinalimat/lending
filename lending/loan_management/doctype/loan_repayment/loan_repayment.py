@@ -1563,7 +1563,6 @@ class LoanRepayment(AccountsController):
 				against_account = self.loan_account
 			else:
 				against_account = account_details.interest_receivable_account
-
 			self.add_gl_entry(payment_account, against_account, self.total_interest_paid, gle_map)
 
 			if self.repayment_type == "Interest Waiver" and not self.is_npa:
@@ -1585,7 +1584,6 @@ class LoanRepayment(AccountsController):
 				against_account = self.loan_account
 			else:
 				against_account = account_details.penalty_receivable_account
-
 			self.add_gl_entry(payment_account, against_account, total_penalty_paid, gle_map)
 
 			if self.repayment_type == "Penalty Waiver" and not self.is_npa:
@@ -1620,14 +1618,18 @@ class LoanRepayment(AccountsController):
 		if flt(self.excess_amount, precision):
 			if self.auto_close_loan():
 				against_account = account_details.interest_waiver_account
+				is_waiver_entry = True
 			else:
 				against_account = account_details.customer_refund_account
+				is_waiver_entry = False
 				if not against_account:
 					frappe.throw(
 						_("Please set Customer Refund Account in Loan Product {0}").format(self.loan_product)
 					)
 
-			self.add_gl_entry(payment_account, against_account, self.excess_amount, gle_map)
+			self.add_gl_entry(
+				payment_account, against_account, self.excess_amount, gle_map, is_waiver_entry=is_waiver_entry
+			)
 
 		if flt(self.total_charges_paid, precision) > 0 and self.repayment_type in (
 			"Write Off Recovery",
@@ -1717,8 +1719,6 @@ class LoanRepayment(AccountsController):
 		):
 			payment_party_type = ""
 			payment_party = ""
-
-			account_type = frappe.db.get_value("Account", account, ["account_type"])
 			gl_entries.append(
 				self.get_gl_dict(
 					{
@@ -1730,13 +1730,12 @@ class LoanRepayment(AccountsController):
 						"against_voucher": self.against_loan,
 						"remarks": _(remarks),
 						"cost_center": self.cost_center,
-						"party": payment_party if account_type in ("Receivable", "Payable") else None,
-						"party_type": payment_party_type if account_type in ("Receivable", "Payable") else None,
+						"party": payment_party if not is_waiver_entry else "",
+						"party_type": payment_party_type if not is_waiver_entry else "",
 						"posting_date": getdate(self.posting_date),
 					}
 				)
 			)
-			account_type = frappe.db.get_value("Account", against_account, ["account_type"])
 		gl_entries.append(
 			self.get_gl_dict(
 				{
