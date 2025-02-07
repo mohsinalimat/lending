@@ -140,7 +140,6 @@ class LoanDemand(AccountsController):
 		precision = cint(frappe.db.get_default("currency_precision")) or 2
 
 		if flt(self.demand_amount, precision):
-			account_type = frappe.db.get_value("Account", receivable_account, ["account_type"])
 			gl_entries.append(
 				self.get_gl_dict(
 					{
@@ -150,14 +149,13 @@ class LoanDemand(AccountsController):
 						"debit": self.demand_amount,
 						"against_voucher_type": "Loan",
 						"against_voucher": self.loan,
-						"party_type": self.applicant_type if account_type in ("Receivable", "Payable") else None,
-						"party": self.applicant if account_type in ("Receivable", "Payable") else None,
+						"party_type": self.applicant_type,
+						"party": self.applicant,
 						"cost_center": self.cost_center,
 					}
 				)
 			)
 
-			account_type = frappe.db.get_value("Account", accrual_account, ["account_type"])
 			gl_entries.append(
 				self.get_gl_dict(
 					{
@@ -168,8 +166,8 @@ class LoanDemand(AccountsController):
 						"against_voucher_type": "Loan",
 						"against_voucher": self.loan,
 						"cost_center": self.cost_center,
-						"party_type": party_type if account_type in ("Receivable", "Payable") else None,
-						"party": party if account_type in ("Receivable", "Payable") else None,
+						"party_type": party_type,
+						"party": party,
 					}
 				)
 			)
