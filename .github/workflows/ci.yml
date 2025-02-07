@@ -108,12 +108,3 @@ jobs:
         run: cd ~/frappe-bench/ && bench --site test_site run-tests --app lending --coverage
         env:
           TYPE: server
-
-      - name: Upload coverage data
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          fail_ci_if_error: true
-          files: /home/runner/frappe-bench/sites/coverage.xml
-          verbose: true

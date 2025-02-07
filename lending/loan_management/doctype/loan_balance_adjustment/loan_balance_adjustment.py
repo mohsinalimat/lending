@@ -108,9 +108,9 @@ class LoanBalanceAdjustment(AccountsController):
 
 	def make_gl_entries(self, cancel=0, adv_adj=0):
 		gle_map = []
-		remarks = "{} against loan {}".format(self.adjustment_type.capitalize(), self.loan)
+		remarks = _("{} against loan {}").format(self.adjustment_type.capitalize(), self.loan)
 		if self.reference_number:
-			remarks += " with reference no. {}".format(self.reference_number)
+			remarks += " " + _("with reference no. {}").format(self.reference_number)
 
 		loan_entry = {
 			"account": self.adjustment_receivable_account,

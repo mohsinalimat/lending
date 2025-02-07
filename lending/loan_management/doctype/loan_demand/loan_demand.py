@@ -41,12 +41,11 @@ class LoanDemand(AccountsController):
 
 		if (
 			not frappe.flags.on_repost
-			and self.is_term_loan
-			and self.demand_type == "EMI"
+			and self.demand_type in ("EMI", "Normal")
 			and self.demand_subtype == "Interest"
 		):
 			process_loan_interest_accrual_for_loans(
-				posting_date=add_days(self.demand_date, -1), loan=self.loan
+				posting_date=add_days(self.demand_date, -1), loan=self.loan, company=self.company
 			)
 
 	def update_repayment_schedule(self, cancel=0):
@@ -301,6 +300,76 @@ def make_loan_demand_for_term_loans(
 
 			if len(open_loans) > 1:
 				frappe.db.rollback()
+
+
+def make_loan_demand_for_demand_loans(
+	posting_date,
+	loan_product=None,
+	loan=None,
+	process_loan_demand=None,
+):
+	precision = cint(frappe.db.get_default("currency_precision")) or 2
+	filters = {
+		"docstatus": 1,
+		"status": ("in", ("Disbursed", "Partially Disbursed", "Active")),
+		"is_term_loan": 0,
+	}
+
+	if loan_product:
+		filters["loan_product"] = loan_product
+
+	if loan:
+		filters["name"] = loan
+
+	open_loans = frappe.db.get_all("Loan", filters=filters, pluck="name")
+
+	for loan in open_loans:
+		make_loan_demand_for_demand_loan(posting_date, loan, process_loan_demand)
+
+
+def make_loan_demand_for_demand_loan(posting_date, loan, process_loan_demand):
+	# get last demand date
+	loan_demands = frappe.qb.DocType("Loan Demand")
+	query = (
+		frappe.qb.from_(loan_demands)
+		.select(loan_demands.demand_date)
+		.where(loan_demands.docstatus == 1)
+		.where(loan_demands.loan == loan)
+		.where(loan_demands.demand_date <= posting_date)
+		.orderby(loan_demands.demand_date, order=frappe.qb.desc)
+		.limit(1)
+	)
+
+	last_demand_date = query.run()
+	if len(last_demand_date):
+		last_demand_date = last_demand_date[0][0]
+	else:
+		last_demand_date = None
+
+	interest_accruals = frappe.qb.DocType("Loan Interest Accrual")
+	query = (
+		frappe.qb.from_(interest_accruals)
+		.select(frappe.query_builder.functions.Sum(interest_accruals.interest_amount))
+		.where(interest_accruals.docstatus == 1)
+		.where(interest_accruals.loan == loan)
+	)
+	if last_demand_date:
+		query = query.where(interest_accruals.posting_date > last_demand_date)
+
+	total_pending_interest = query.run()
+	if len(total_pending_interest):
+		total_pending_interest = total_pending_interest[0][0]
+	else:
+		total_pending_interest = 0
+
+	create_loan_demand(
+		loan,
+		posting_date,
+		"Normal",
+		"Interest",
+		total_pending_interest,
+		process_loan_demand=process_loan_demand,
+	)
 
 
 def create_loan_demand(

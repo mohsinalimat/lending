@@ -40,6 +40,7 @@ from lending.loan_management.doctype.process_loan_interest_accrual.process_loan_
 )
 
 
+# nosemgrep
 class LoanDisbursement(AccountsController):
 	def validate(self):
 		self.set_status()
@@ -344,7 +345,7 @@ class LoanDisbursement(AccountsController):
 				<= getdate(self.disbursement_date)
 				<= getdate(limit_details.limit_applicable_end)
 			):
-				frappe.throw("Disbursement date is out of approved limit dates")
+				frappe.throw(_("Disbursement date is out of approved limit dates"))
 
 		if limit_details.available_limit_amount and self.disbursed_amount > flt(
 			limit_details.available_limit_amount
@@ -535,6 +536,7 @@ class LoanDisbursement(AccountsController):
 		against_voucher=None,
 		bpi_difference_date=None,
 	):
+		account_type = frappe.db.get_value("Account", account, "account_type")
 		gl_entries.append(
 			self.get_gl_dict(
 				{
@@ -546,13 +548,12 @@ class LoanDisbursement(AccountsController):
 					"against_voucher": against_voucher or self.against_loan,
 					"remarks": remarks,
 					"cost_center": self.cost_center,
-					"party_type": self.applicant_type,
-					"party": self.applicant,
+					"party_type": self.applicant_type if account_type in ("Receivable", "Payable") else None,
+					"party": self.applicant if account_type in ("Receivable", "Payable") else None,
 					"posting_date": bpi_difference_date or self.disbursement_date,
 				}
 			)
 		)
-
 		account_type = frappe.db.get_value("Account", against_account, "account_type")
 		gl_entries.append(
 			self.get_gl_dict(

@@ -48,6 +48,6 @@ bench start &> bench_run_logs.txt &
 CI=Yes bench build --app frappe &
 bench --site test_site reinstall --yes
 
-bench get-app lending "${GITHUB_WORKSPACE}"
+bench get-app "${GITHUB_WORKSPACE}"
 bench --site test_site install-app lending
 bench setup requirements --dev

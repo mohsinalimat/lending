@@ -26,7 +26,7 @@ class TestLoanApplication(unittest.TestCase):
 			0,
 			1,
 			0,
-			"Cash",
+			"Cash - _TC",
 			"Disbursement Account - _TC",
 			"Payment Account - _TC",
 			"Loan Account - _TC",

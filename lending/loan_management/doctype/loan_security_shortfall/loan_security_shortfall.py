@@ -118,7 +118,7 @@ def check_for_ltv_shortfall(process_loan_security_shortfall):
 
 		current_ratio = (outstanding_amount / security_value) * 100 if security_value else 0
 
-		if current_ratio > ltv_ratio:
+		if flt(current_ratio, 6) > flt(ltv_ratio, 6):
 			shortfall_amount = outstanding_amount - ((security_value * ltv_ratio) / 100)
 			create_loan_security_shortfall(
 				loan.name,
@@ -130,7 +130,7 @@ def check_for_ltv_shortfall(process_loan_security_shortfall):
 			)
 		elif loan_shortfall_map.get(loan.name):
 			shortfall_amount = outstanding_amount - ((security_value * ltv_ratio) / 100)
-			if shortfall_amount <= 0:
+			if flt(shortfall_amount, 6) <= 0:
 				shortfall = loan_shortfall_map.get(loan.name)
 				update_pending_shortfall(shortfall)
 

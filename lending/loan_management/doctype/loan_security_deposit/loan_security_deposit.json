@@ -43,12 +43,14 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Deposit Amount",
+   "options": "Company:company:default_currency",
    "read_only": 1
   },
   {
    "fieldname": "allocated_amount",
    "fieldtype": "Currency",
    "label": "Allocated Amount",
+   "options": "Company:company:default_currency",
    "read_only": 1
   },
   {
@@ -74,7 +76,8 @@
   {
    "fieldname": "refund_amount",
    "fieldtype": "Currency",
-   "label": "Refund Amount"
+   "label": "Refund Amount",
+   "options": "Company:company:default_currency"
   },
   {
    "fieldname": "refund_date",
@@ -84,14 +87,15 @@
   {
    "fieldname": "available_amount",
    "fieldtype": "Currency",
-   "label": "Available Amount"
+   "label": "Available Amount",
+   "options": "Company:company:default_currency"
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-12 16:56:40.174119",
+ "modified": "2025-02-06 05:07:24.383696",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Security Deposit",
