@@ -34,7 +34,7 @@ frappe.ui.form.on('Loan Security Assignment', {
 				},
 				method: "lending.loan_management.doctype.loan_security_assignment.loan_security_assignment.release_loan_security_assignment",
 				callback: function(r) {
-					cur_frm.reload_doc();
+					frm.reload_doc();
 				}
 			})
 		})

@@ -10,6 +10,11 @@ def before_tests():
 	from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 
 	year = now_datetime().year
+
+	frappe.defaults.set_global_defaults("default_company", "_Test Company")
+	frappe.defaults.set_global_defaults("default_currency", "INR")
+	frappe.defaults.set_global_defaults("country", "India")
+
 	if not frappe.get_list("Company"):
 		setup_complete(
 			{

@@ -189,22 +189,24 @@ class LoanWriteOff(AccountsController):
 	def close_employee_loan(self, cancel=0):
 		if not self.applicant_type == "Employee":
 			return
+		opts = [
+			"total_payment",
+			"total_principal_paid",
+			"loan_amount",
+			"total_interest_payable",
+			"written_off_amount",
+			"disbursed_amount",
+			"status",
+			"is_secured_loan",
+			"name",
+		]
+
+		if frappe.db.has_column("Loan", "repay_from_salary"):
+			opts.append("repay_from_salary")
 
 		loan = frappe.get_value(
 			"Loan",
 			self.loan,
-			[
-				"total_payment",
-				"total_principal_paid",
-				"loan_amount",
-				"total_interest_payable",
-				"written_off_amount",
-				"disbursed_amount",
-				"status",
-				"is_secured_loan",
-				"repay_from_salary",
-				"name",
-			],
 			as_dict=1,
 		)
 

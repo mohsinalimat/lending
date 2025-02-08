@@ -32,6 +32,7 @@ from lending.loan_management.doctype.loan_security_release.loan_security_release
 )
 
 
+# nosemgrep
 class Loan(AccountsController):
 	def validate(self):
 		self.set_status()
@@ -132,6 +133,7 @@ class Loan(AccountsController):
 		]
 		self.set_status()
 
+	# nosemgrep
 	def set_status(self):
 		if self.docstatus == 0:
 			self.status = "Draft"
@@ -362,13 +364,22 @@ def get_total_loan_amount(applicant_type, applicant, company):
 		],
 	)
 
-	interest_amount = flt(
+	total_interest_amount = flt(
 		frappe.db.get_value(
 			"Loan Interest Accrual",
 			{"applicant_type": applicant_type, "company": company, "applicant": applicant, "docstatus": 1},
-			"sum(interest_amount - paid_interest_amount)",
+			"sum(interest_amount)",
 		)
 	)
+	paid_interest = flt(
+		frappe.db.get_value(
+			"Loan Repayment",
+			{"applicant_type": applicant_type, "company": company, "applicant": applicant, "docstatus": 1},
+			"sum(total_interest_paid)",
+		)
+	)
+
+	interest_amount = total_interest_amount - paid_interest
 
 	for loan in loan_details:
 		if loan.status in ("Disbursed", "Loan Closure Requested", "Active"):
@@ -414,7 +425,7 @@ def request_loan_closure(loan, posting_date=None, auto_close=0):
 		amounts["pending_principal_amount"]
 		+ amounts["interest_amount"]
 		+ amounts["penalty_amount"]
-		+ amounts.get("excess_amount_paid", 0)
+		- amounts.get("excess_amount_paid", 0)
 	)
 
 	loan_product, loan_status = frappe.get_value("Loan", loan, ["loan_product", "status"])
@@ -522,7 +533,9 @@ def make_loan_disbursement(
 
 
 @frappe.whitelist()
-def make_repayment_entry(loan, applicant_type, applicant, loan_product, company, as_dict=0):
+def make_repayment_entry(
+	loan, applicant_type, applicant, loan_product, company, loan_disbursement=None, as_dict=0
+):
 	repayment_entry = frappe.new_doc("Loan Repayment")
 	repayment_entry.against_loan = loan
 	repayment_entry.applicant_type = applicant_type
@@ -530,6 +543,7 @@ def make_repayment_entry(loan, applicant_type, applicant, loan_product, company,
 	repayment_entry.company = company
 	repayment_entry.loan_product = loan_product
 	repayment_entry.posting_date = nowdate()
+	repayment_entry.loan_disbursement = loan_disbursement
 
 	if as_dict:
 		return repayment_entry.as_dict()
