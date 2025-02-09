@@ -9,29 +9,35 @@
  "field_order": [
   "product_code",
   "product_name",
+  "rate_of_interest",
   "loan_category",
   "maximum_loan_amount",
-  "rate_of_interest",
   "penalty_interest_rate",
-  "grace_period_in_days",
-  "write_off_amount",
-  "excess_amount_acceptance_limit",
-  "min_days_bw_disbursement_first_repayment",
-  "loan_partners",
   "column_break_2",
   "company",
+  "cyclic_day_of_the_month",
+  "repayment_date_on",
+  "repayment_schedule_type",
+  "days_past_due_threshold_for_npa",
   "is_term_loan",
   "validate_normal_repayment",
   "disabled",
-  "repayment_schedule_type",
-  "cyclic_day_of_the_month",
-  "repayment_date_on",
-  "days_past_due_threshold_for_npa",
-  "description",
+  "limits_section",
+  "min_days_bw_disbursement_first_repayment",
+  "excess_amount_acceptance_limit",
+  "column_break_wwhp",
+  "write_off_amount",
+  "grace_period_in_days",
+  "collection_offset_sequence_section",
   "collection_offset_sequence_for_standard_asset",
   "collection_offset_sequence_for_sub_standard_asset",
+  "column_break_dbkg",
   "collection_offset_sequence_for_written_off_asset",
   "collection_offset_sequence_for_settlement_collection",
+  "section_break_ia6s",
+  "loan_charges",
+  "amended_from",
+  "accounting_tab",
   "account_details_section",
   "disbursement_account",
   "payment_account",
@@ -68,9 +74,9 @@
   "write_off_account",
   "column_break_ehnt",
   "write_off_recovery_account",
-  "section_break_ia6s",
-  "loan_charges",
-  "amended_from"
+  "co_lending_tab",
+  "loan_partners",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -96,11 +102,6 @@
    "fieldname": "disabled",
    "fieldtype": "Check",
    "label": "Disabled"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Text",
-   "label": "Description"
   },
   {
    "collapsible": 1,
@@ -255,8 +256,10 @@
    "reqd": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_ia6s",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Charges"
   },
   {
    "allow_on_submit": 1,
@@ -475,11 +478,46 @@
    "fieldtype": "Link",
    "label": "Collection Offset Sequence for Settlement Collection",
    "options": "Loan Demand Offset Order"
+  },
+  {
+   "fieldname": "limits_section",
+   "fieldtype": "Section Break",
+   "label": "Limits"
+  },
+  {
+   "fieldname": "column_break_wwhp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "collection_offset_sequence_section",
+   "fieldtype": "Section Break",
+   "label": "Collection Offset Sequence"
+  },
+  {
+   "fieldname": "column_break_dbkg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fieldname": "co_lending_tab",
+   "fieldtype": "Tab Break",
+   "label": "Co Lending"
+  },
+  {
+   "fieldname": "accounting_tab",
+   "fieldtype": "Tab Break",
+   "label": "Accounting"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-27 06:47:08.669731",
+ "modified": "2025-02-09 16:16:25.371953",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Product",

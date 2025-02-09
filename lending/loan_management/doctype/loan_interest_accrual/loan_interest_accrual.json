@@ -6,6 +6,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "accrual_details_section",
   "loan",
   "loan_repayment_schedule",
   "loan_disbursement",
@@ -24,16 +25,19 @@
   "interest_type",
   "is_term_loan",
   "is_npa",
+  "accounting_dimensoin_section",
+  "cost_center",
+  "column_break_wrcw",
   "section_break_7",
   "base_amount",
   "additional_interest_amount",
+  "last_accrual_date",
   "column_break_14",
   "interest_amount",
   "loan_demand",
   "loan_repayment_schedule_detail",
   "section_break_15",
   "process_loan_interest_accrual",
-  "last_accrual_date",
   "amended_from"
  ],
  "fields": [
@@ -234,13 +238,34 @@
    "label": "Loan Disbursement",
    "options": "Loan Disbursement",
    "search_index": 1
+  },
+  {
+   "fieldname": "accrual_details_section",
+   "fieldtype": "Section Break",
+   "label": "Accrual Details"
+  },
+  {
+   "fieldname": "accounting_dimensoin_section",
+   "fieldtype": "Section Break",
+   "label": "Accounting Dimensoin"
+  },
+  {
+   "fetch_from": "loan.cost_center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "column_break_wrcw",
+   "fieldtype": "Column Break"
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-26 21:37:19.672292",
+ "modified": "2025-02-09 18:07:02.535630",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Interest Accrual",

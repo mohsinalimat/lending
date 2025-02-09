@@ -9,36 +9,27 @@
  "field_order": [
   "loan",
   "loan_disbursement",
-  "company",
   "loan_amount",
   "current_principal_amount",
   "rate_of_interest",
-  "loan_partner",
-  "loan_partner_rate_of_interest",
   "column_break_n6iy",
+  "company",
   "posting_date",
   "repayment_frequency",
-  "repayment_date_on",
-  "repayment_method",
-  "repayment_periods",
   "repayment_start_date",
   "maturity_date",
   "repayment_schedule_section",
   "repayment_schedule",
-  "co_lender_schedule_section",
-  "colender_schedule",
-  "loan_partner_details_section",
-  "partner_loan_share_percentage",
-  "partner_base_interest_rate",
-  "column_break_ilwz",
-  "partner_repayment_schedule_type",
   "term_details_section",
   "total_installments_paid",
   "total_installments_raised",
+  "total_installments_overdue",
   "loan_product",
   "column_break_xkbd",
-  "total_installments_overdue",
+  "repayment_method",
+  "repayment_periods",
   "repayment_schedule_type",
+  "repayment_date_on",
   "other_details_section",
   "disbursed_amount",
   "monthly_repayment_amount",
@@ -54,7 +45,17 @@
   "treatment_of_interest",
   "moratorium_end_date",
   "adjusted_interest",
-  "broken_period_interest_days"
+  "broken_period_interest_days",
+  "co_lending_tab",
+  "loan_partner_details_section",
+  "loan_partner",
+  "loan_partner_rate_of_interest",
+  "partner_base_interest_rate",
+  "column_break_ilwz",
+  "partner_loan_share_percentage",
+  "partner_repayment_schedule_type",
+  "co_lender_schedule_section",
+  "colender_schedule"
  ],
  "fields": [
   {
@@ -307,6 +308,7 @@
    "options": "\nNormal Restructure\nAdvance Payment\nPre Payment"
   },
   {
+   "collapsible": 1,
    "fieldname": "co_lender_schedule_section",
    "fieldtype": "Section Break",
    "label": "Co Lender Schedule"
@@ -337,6 +339,7 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "loan_partner_details_section",
    "fieldtype": "Section Break",
    "label": "Loan Partner Details"
@@ -368,12 +371,17 @@
    "fieldtype": "Date",
    "label": "Maturity Date",
    "read_only": 1
+  },
+  {
+   "fieldname": "co_lending_tab",
+   "fieldtype": "Tab Break",
+   "label": "Co Lending"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-31 22:52:42.962589",
+ "modified": "2025-02-09 16:31:11.170120",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment Schedule",
