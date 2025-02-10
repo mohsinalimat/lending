@@ -16,6 +16,7 @@
   "loan",
   "loan_repayment_schedule",
   "loan_disbursement",
+  "disbursement_date",
   "column_break_ssmc",
   "repayment_schedule_detail",
   "sales_invoice",
@@ -188,6 +189,13 @@
    "search_index": 1
   },
   {
+    "fetch_from": "loan_repayment_schedule.posting_date",
+    "fieldname": "disbursement_date",
+    "fieldtype": "Date",
+    "label": "Disbursement Date",
+    "hidden": 1
+  },
+  {
    "default": "0",
    "fetch_from": "loan.is_term_loan",
    "fieldname": "is_term_loan",
@@ -274,7 +282,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-10 15:51:56.033080",
+ "modified": "2025-02-10 16:51:56.033080",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Demand",
