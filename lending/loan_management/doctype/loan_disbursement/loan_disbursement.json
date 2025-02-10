@@ -33,23 +33,24 @@
   "broken_period_interest",
   "bpi_amount_difference",
   "principal_amount_paid",
-  "accounting_dimensions_section",
-  "cost_center",
-  "charges_section",
-  "loan_disbursement_charges",
   "accounting_details",
   "disbursement_account",
   "refund_account",
   "column_break_16",
   "loan_account",
   "bank_account",
+  "accounting_dimensions_section",
+  "cost_center",
+  "charges_section",
+  "loan_disbursement_charges",
   "disbursement_references_section",
   "reference_date",
   "days_past_due",
   "status",
   "column_break_17",
   "reference_number",
-  "amended_from"
+  "amended_from",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -156,6 +157,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "collapsible": 1,
    "fieldname": "disbursement_references_section",
    "fieldtype": "Section Break",
    "label": "Disbursement References"
@@ -237,6 +239,7 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "charges_section",
    "fieldtype": "Section Break",
    "label": "Charges"
@@ -354,12 +357,18 @@
    "label": "Status",
    "options": "\nDraft\nSubmitted\nCancelled\nClosed",
    "read_only": 1
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-01 11:56:14.127955",
+ "modified": "2025-02-09 16:19:36.800394",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Disbursement",

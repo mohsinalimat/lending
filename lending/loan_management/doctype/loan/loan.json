@@ -8,40 +8,42 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "applicant_details_section",
   "applicant_type",
   "applicant",
   "applicant_name",
   "loan_application",
-  "repost_days_past_due_log",
   "column_break_3",
   "company",
   "posting_date",
-  "loan_partner",
-  "cancellation_date",
   "status",
   "section_break_8",
   "loan_product",
+  "loan_amount",
+  "loan_partner",
   "loan_category",
   "repayment_schedule_type",
-  "loan_amount",
+  "cancellation_date",
+  "settlement_date",
+  "column_break_11",
   "rate_of_interest",
   "penalty_charges_rate",
-  "is_secured_loan",
   "disbursement_date",
-  "closure_date",
-  "settlement_date",
   "disbursed_amount",
-  "column_break_11",
+  "closure_date",
   "maximum_loan_amount",
+  "is_secured_loan",
+  "is_term_loan",
+  "term_details_section",
+  "repayment_start_date",
   "repayment_method",
-  "repayment_frequency",
   "repayment_periods",
   "monthly_repayment_amount",
-  "repayment_start_date",
-  "moratorium_tenure",
+  "column_break_qsfx",
   "moratorium_type",
+  "moratorium_tenure",
+  "repayment_frequency",
   "treatment_of_interest",
-  "is_term_loan",
   "loan_credit_limits_section",
   "limit_applicable_start",
   "maximum_limit_amount",
@@ -68,25 +70,29 @@
   "loan_account",
   "interest_income_account",
   "penalty_income_account",
+  "totals_tab",
   "section_break_17",
   "total_payment",
-  "total_principal_paid",
-  "written_off_amount",
-  "refund_amount",
-  "excess_amount_paid",
-  "debit_adjustment_amount",
-  "credit_adjustment_amount",
-  "column_break_19",
   "total_interest_payable",
+  "total_principal_paid",
+  "amended_from",
+  "column_break_19",
   "total_amount_paid",
   "is_npa",
   "manual_npa",
   "unmark_npa",
   "freeze_account",
   "freeze_date",
-  "amended_from",
   "fldg_triggered",
-  "fldg_trigger_date"
+  "fldg_trigger_date",
+  "adjustments_section",
+  "written_off_amount",
+  "debit_adjustment_amount",
+  "credit_adjustment_amount",
+  "column_break_yskw",
+  "refund_amount",
+  "excess_amount_paid",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -378,6 +384,7 @@
    "reqd": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "accounting_dimensions_section",
    "fieldtype": "Section Break",
    "label": "Accounting Dimensions"
@@ -508,6 +515,7 @@
    "options": "Loan Disbursement Charge"
   },
   {
+   "collapsible": 1,
    "fieldname": "loan_charges_section",
    "fieldtype": "Section Break",
    "label": "Loan Charges"
@@ -610,7 +618,6 @@
    "no_copy": 1
   },
   {
-   "allow_on_submit": 1,
    "fieldname": "cancellation_date",
    "fieldtype": "Date",
    "label": "Cancellation Date",
@@ -638,6 +645,7 @@
    "label": "Unmark NPA"
   },
   {
+   "depends_on": "fldg_triggered",
    "fieldname": "fldg_trigger_date",
    "fieldtype": "Date",
    "label": "FLDG Trigger Date"
@@ -664,16 +672,44 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "repost_days_past_due_log",
-   "fieldtype": "Int",
-   "label": "Repost"
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fieldname": "totals_tab",
+   "fieldtype": "Tab Break",
+   "label": "Totals"
+  },
+  {
+   "fieldname": "adjustments_section",
+   "fieldtype": "Section Break",
+   "label": "Adjustments"
+  },
+  {
+   "fieldname": "column_break_yskw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "applicant_details_section",
+   "fieldtype": "Section Break",
+   "label": "Applicant Details"
+  },
+  {
+   "fieldname": "term_details_section",
+   "fieldtype": "Section Break",
+   "label": "Term Details"
+  },
+  {
+   "fieldname": "column_break_qsfx",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-03 00:52:13.170705",
+ "modified": "2025-02-08 20:27:32.009472",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan",

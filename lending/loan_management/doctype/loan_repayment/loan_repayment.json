@@ -7,17 +7,17 @@
  "engine": "InnoDB",
  "field_order": [
   "against_loan",
+  "applicant",
+  "repayment_type",
   "loan_disbursement",
   "loan_adjustment",
   "repayment_schedule_type",
   "applicant_type",
-  "applicant",
   "loan_product",
-  "repayment_type",
-  "loan_restructure",
   "column_break_3",
   "company",
   "posting_date",
+  "loan_restructure",
   "clearance_date",
   "rate_of_interest",
   "days_past_due",
@@ -36,11 +36,8 @@
   "payable_principal_amount",
   "penalty_amount",
   "amount_paid",
-  "accounting_dimensions_section",
-  "cost_center",
-  "loan_partner",
-  "prepayment_charges_section",
-  "prepayment_charges",
+  "section_break_55wc",
+  "repayment_details",
   "references_section",
   "reference_number",
   "total_interest_paid",
@@ -54,6 +51,19 @@
   "total_charges_paid",
   "excess_amount",
   "manual_remarks",
+  "amended_from",
+  "accounting_dimensions_section",
+  "cost_center",
+  "loan_partner",
+  "prepayment_charges_section",
+  "prepayment_charges",
+  "accounting_details_section",
+  "payment_account",
+  "penalty_income_account",
+  "column_break_36",
+  "loan_account",
+  "bank_account",
+  "co_lending_tab",
   "loan_partner_details_section",
   "total_partner_interest_share",
   "total_partner_principal_share",
@@ -61,16 +71,7 @@
   "column_break_uxwo",
   "loan_partner_payment_ratio",
   "loan_partner_share_percentage",
-  "loan_partner_repayment_schedule_type",
-  "section_break_55wc",
-  "repayment_details",
-  "amended_from",
-  "accounting_details_section",
-  "payment_account",
-  "penalty_income_account",
-  "column_break_36",
-  "loan_account",
-  "bank_account"
+  "loan_partner_repayment_schedule_type"
  ],
  "fields": [
   {
@@ -127,6 +128,7 @@
    "fetch_from": "against_loan.loan_product",
    "fieldname": "loan_product",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Loan Product",
    "options": "Loan Product",
    "read_only": 1
@@ -163,6 +165,7 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "accounting_dimensions_section",
    "fieldtype": "Section Break",
    "label": "Accounting Dimensions"
@@ -235,6 +238,7 @@
    "fetch_from": "against_loan.applicant_type",
    "fieldname": "applicant_type",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Applicant Type",
    "options": "Employee\nMember\nCustomer",
    "read_only": 1,
@@ -264,6 +268,7 @@
    "fetch_from": "against_loan.rate_of_interest",
    "fieldname": "rate_of_interest",
    "fieldtype": "Percent",
+   "hidden": 1,
    "label": "Rate Of Interest",
    "read_only": 1
   },
@@ -284,11 +289,13 @@
   {
    "fieldname": "clearance_date",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Clearance Date",
    "no_copy": 1,
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "accounting_details_section",
    "fieldtype": "Section Break",
    "label": "Accounting Details"
@@ -332,12 +339,14 @@
    "fetch_from": "against_loan.days_past_due",
    "fieldname": "days_past_due",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Days Past Due",
    "read_only": 1
   },
   {
    "fieldname": "section_break_55wc",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Allocated Demands"
   },
   {
    "fieldname": "total_charges_payable",
@@ -369,6 +378,7 @@
    "fetch_from": "against_loan.repayment_schedule_type",
    "fieldname": "repayment_schedule_type",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Repayment Schedule Type"
   },
   {
@@ -399,6 +409,7 @@
    "options": "Bank Account"
   },
   {
+   "collapsible": 1,
    "fieldname": "prepayment_charges_section",
    "fieldtype": "Section Break",
    "label": "Prepayment Charges"
@@ -434,6 +445,7 @@
   {
    "fieldname": "payable_charges",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Payable Charges",
    "options": "Loan Repayment Charges"
   },
@@ -510,12 +522,17 @@
    "fieldtype": "Percent",
    "label": "Loan Partner Interest Rate",
    "read_only": 1
+  },
+  {
+   "fieldname": "co_lending_tab",
+   "fieldtype": "Tab Break",
+   "label": "Co Lending"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-23 19:34:44.246290",
+ "modified": "2025-02-10 16:18:26.424261",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Repayment",
