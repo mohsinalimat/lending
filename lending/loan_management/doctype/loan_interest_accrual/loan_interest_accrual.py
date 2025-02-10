@@ -88,7 +88,7 @@ class LoanInterestAccrual(AccountsController):
 
 		if self.interest_type == "Normal Interest":
 			receivable_account = account_details.interest_accrued_account
-			income_account = self.interest_income_account or account_details.interest_income_account
+			income_account = account_details.interest_income_account
 
 			if not receivable_account:
 				frappe.throw(
