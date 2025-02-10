@@ -8,26 +8,23 @@
  "field_order": [
   "accrual_details_section",
   "loan",
-  "loan_repayment_schedule",
-  "loan_disbursement",
   "rate_of_interest",
-  "loan_product",
   "applicant_type",
   "applicant",
-  "interest_income_account",
-  "loan_account",
+  "loan_product",
   "column_break_4",
   "company",
   "start_date",
   "posting_date",
-  "accrual_date",
-  "accrual_type",
   "interest_type",
   "is_term_loan",
   "is_npa",
-  "accounting_dimensoin_section",
-  "cost_center",
-  "column_break_wrcw",
+  "references_section",
+  "loan_disbursement",
+  "accrual_type",
+  "column_break_idqd",
+  "loan_repayment_schedule",
+  "accrual_date",
   "section_break_7",
   "base_amount",
   "additional_interest_amount",
@@ -36,6 +33,9 @@
   "interest_amount",
   "loan_demand",
   "loan_repayment_schedule_detail",
+  "accounting_dimensions_section",
+  "cost_center",
+  "column_break_wrcw",
   "section_break_15",
   "process_loan_interest_accrual",
   "amended_from"
@@ -92,20 +92,6 @@
   {
    "fieldname": "column_break_4",
    "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "loan.interest_income_account",
-   "fieldname": "interest_income_account",
-   "fieldtype": "Link",
-   "label": "Interest Income Account",
-   "options": "Account"
-  },
-  {
-   "fetch_from": "loan.loan_account",
-   "fieldname": "loan_account",
-   "fieldtype": "Link",
-   "label": "Loan Account",
-   "options": "Account"
   },
   {
    "fieldname": "section_break_7",
@@ -245,9 +231,10 @@
    "label": "Accrual Details"
   },
   {
-   "fieldname": "accounting_dimensoin_section",
+   "collapsible": 1,
+   "fieldname": "accounting_dimensions_section",
    "fieldtype": "Section Break",
-   "label": "Accounting Dimensoin"
+   "label": "Accounting Dimension"
   },
   {
    "fetch_from": "loan.cost_center",
@@ -259,13 +246,22 @@
   {
    "fieldname": "column_break_wrcw",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "column_break_idqd",
+   "fieldtype": "Column Break"
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-09 18:07:02.535630",
+ "modified": "2025-02-09 18:27:48.657160",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Interest Accrual",

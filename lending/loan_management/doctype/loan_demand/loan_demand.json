@@ -5,34 +5,42 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "loan_demand_details_section",
-  "loan",
-  "loan_repayment_schedule",
-  "loan_disbursement",
-  "repayment_schedule_detail",
+  "applicant_details_section",
   "applicant_type",
   "applicant",
-  "loan_product",
-  "loan_partner",
-  "demand_type",
-  "demand_subtype",
-  "amended_from",
-  "cost_center",
-  "process_loan_demand",
-  "column_break_qrjm",
+  "column_break_ymok",
   "company",
   "demand_date",
   "posting_date",
-  "disbursement_date",
+  "references_section",
+  "loan",
+  "loan_repayment_schedule",
+  "loan_disbursement",
+  "column_break_ssmc",
+  "repayment_schedule_detail",
+  "sales_invoice",
+  "loan_product",
+  "is_term_loan",
+  "loan_demand_details_section",
+  "demand_type",
+  "demand_subtype",
+  "invoice_date",
+  "column_break_qrjm",
   "demand_amount",
-  "partner_share",
-  "partner_share_allocated",
   "paid_amount",
   "waived_amount",
   "outstanding_amount",
-  "sales_invoice",
-  "invoice_date",
-  "is_term_loan"
+  "accounting_dimensions_section",
+  "cost_center",
+  "column_break_hmrs",
+  "amended_from",
+  "process_loan_demand",
+  "co_lending_tab",
+  "loan_partner_share_details_section",
+  "loan_partner",
+  "column_break_swqr",
+  "partner_share_allocated",
+  "partner_share"
  ],
  "fields": [
   {
@@ -180,12 +188,6 @@
    "search_index": 1
   },
   {
-   "fetch_from": "loan_repayment_schedule.posting_date",
-   "fieldname": "disbursement_date",
-   "fieldtype": "Date",
-   "label": "Disbursement Date"
-  },
-  {
    "default": "0",
    "fetch_from": "loan.is_term_loan",
    "fieldname": "is_term_loan",
@@ -224,13 +226,55 @@
    "fieldtype": "Currency",
    "label": "Partner Share Allocated",
    "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "applicant_details_section",
+   "fieldtype": "Section Break",
+   "label": "Applicant Details"
+  },
+  {
+   "fieldname": "column_break_ymok",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "accounting_dimensions_section",
+   "fieldtype": "Section Break",
+   "label": "Accounting Dimensions"
+  },
+  {
+   "fieldname": "column_break_hmrs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "co_lending_tab",
+   "fieldtype": "Tab Break",
+   "label": "Co Lending"
+  },
+  {
+   "fieldname": "loan_partner_share_details_section",
+   "fieldtype": "Section Break",
+   "label": "Loan Partner Share Details"
+  },
+  {
+   "fieldname": "column_break_swqr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "column_break_ssmc",
+   "fieldtype": "Column Break"
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-01-29 14:12:33.665969",
+ "modified": "2025-02-10 15:51:56.033080",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Demand",
