@@ -100,7 +100,6 @@ class LoanRepaymentRepost(Document):
 				repayment_doc.docstatus = 2
 
 				repayment_doc.update_demands(cancel=1)
-				repayment_doc.update_limits(cancel=1)
 				repayment_doc.update_security_deposit_amount(cancel=1)
 
 				if repayment_doc.repayment_type in ("Advance Payment", "Pre Payment"):
@@ -231,7 +230,6 @@ class LoanRepaymentRepost(Document):
 			# Run on_submit events
 			repayment_doc.update_paid_amounts()
 			repayment_doc.update_demands()
-			repayment_doc.update_limits()
 			repayment_doc.update_security_deposit_amount()
 			repayment_doc.db_update_all()
 			repayment_doc.make_gl_entries()
