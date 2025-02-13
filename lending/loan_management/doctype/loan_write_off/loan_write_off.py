@@ -66,7 +66,9 @@ class LoanWriteOff(AccountsController):
 			process_daily_loan_demands,
 		)
 
-		process_daily_loan_demands(self.posting_date, loan=self.loan)
+		if not self.is_settlement_write_off:
+			process_daily_loan_demands(self.posting_date, loan=self.loan)
+
 		self.process_unbooked_interest()
 
 		if not self.is_settlement_write_off:
