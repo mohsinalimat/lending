@@ -2477,8 +2477,6 @@ def get_latest_accrual_date(loan, posting_date, interest_type="Interest", loan_d
 		"MAX(posting_date)",
 	)
 
-	if latest_accrual_date == None:
-		latest_accrual_date = frappe.db.get_value("Loan", loan, ["posting_date"])
 	return latest_accrual_date
 
 
