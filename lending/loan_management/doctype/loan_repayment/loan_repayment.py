@@ -686,12 +686,14 @@ class LoanRepayment(AccountsController):
 
 			if flt(self.amount_paid, precision) > flt(payable_amount, precision):
 				frappe.throw(
-					_("Waived {0} amount cannot be greater than overdue amount").format(
+					_("Waived {0} amount {1} cannot be greater than overdue amount {2}").format(
 						{
 							"Interest Waiver": "interest",
 							"Penalty Waiver": "penalty",
 							"Charges Waiver": "charges",
-						}.get(self.repayment_type)
+						}.get(self.repayment_type),
+						flt(self.amount_paid, precision),
+						flt(payable_amount, precision),
 					)
 				)
 
