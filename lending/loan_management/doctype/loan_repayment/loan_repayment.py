@@ -703,16 +703,20 @@ class LoanRepayment(AccountsController):
 			frappe.throw(_("The Loan Disbursement {0} has been closed.").format(self.loan_disbursement))
 
 	def get_waiver_amount(self, amounts):
+
+		precision = cint(frappe.db.get_default("currency_precision")) or 2
+
 		if self.repayment_type == "Interest Waiver":
-			return (
+			return flt(
 				amounts.get("interest_amount", 0)
 				+ amounts.get("unaccrued_interest", 0)
-				+ amounts.get("unbooked_interest", 0)
+				+ amounts.get("unbooked_interest", 0),
+				precision,
 			)
 		elif self.repayment_type == "Penalty Waiver":
-			return amounts.get("penalty_amount", 0) + amounts.get("unbooked_penalty", 0)
+			return flt(amounts.get("penalty_amount", 0) + amounts.get("unbooked_penalty", 0), precision)
 		elif self.repayment_type == "Charges Waiver":
-			return amounts.get("payable_amount", 0)
+			return flt(amounts.get("payable_amount", 0), precision)
 
 	def book_interest_accrued_not_demanded(self):
 		from lending.loan_management.doctype.loan_demand.loan_demand import create_loan_demand
