@@ -250,10 +250,11 @@ frappe.ui.form.on('Loan', {
 					if (!r.exc && r.message) {
 
 						let loan_fields = ["loan_product", "loan_amount", "repayment_method",
-							"monthly_repayment_amount", "repayment_periods", "rate_of_interest", "is_secured_loan"]
+							"monthly_repayment_amount", "repayment_periods", "rate_of_interest", "is_secured_loan", "applicant", "applicant_type", "maximum_loan_amount"]
 
 						loan_fields.forEach(field => {
 							frm.set_value(field, r.message[field]);
+							frm.set_df_property(field, 'read_only', 1)
 						});
 
 						if (frm.doc.is_secured_loan) {
