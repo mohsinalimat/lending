@@ -146,7 +146,10 @@ class LoanRepayment(AccountsController):
 		update_installment_counts(self.against_loan, loan_disbursement=self.loan_disbursement)
 
 		if self.repayment_type == "Full Settlement":
-			frappe.enqueue(self.post_write_off_settlements, enqueue_after_commit=True)
+			if not frappe.flags.in_test:
+				frappe.enqueue(self.post_write_off_settlements, enqueue_after_commit=True)
+			else:
+				self.post_write_off_settlements()
 
 		update_loan_securities_values(self.against_loan, self.principal_amount_paid, self.doctype)
 		self.create_loan_limit_change_log()
@@ -783,16 +786,21 @@ class LoanRepayment(AccountsController):
 					query = query.set(loan.settlement_date, self.posting_date)
 				self.update_repayment_schedule_status()
 
-		elif self.auto_close_loan() and self.repayment_type in (
-			"Normal Repayment",
-			"Pre Payment",
-			"Advance Payment",
-			"Security Deposit Adjustment",
-			"Loan Closure",
-			"Principal Adjustment",
-			"Penalty Waiver",
-			"Interest Waiver",
-			"Charges Waiver",
+		elif (
+			self.auto_close_loan()
+			and self.repayment_type
+			in (
+				"Normal Repayment",
+				"Pre Payment",
+				"Advance Payment",
+				"Security Deposit Adjustment",
+				"Loan Closure",
+				"Principal Adjustment",
+				"Penalty Waiver",
+				"Interest Waiver",
+				"Charges Waiver",
+			)
+			and not self.is_write_off_waiver
 		):
 			if self.repayment_schedule_type != "Line of Credit":
 				query = query.set(loan.status, "Closed")
