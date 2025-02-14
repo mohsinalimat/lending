@@ -16,6 +16,7 @@ frappe.ui.form.on('Loan', {
 	},
 	onload: function (frm) {
 		frm.trigger("loan_application")
+
 		// Ignore Loan Security Assignment on cancel of loan
 		frm.ignore_doctypes_on_cancel_all = ["Loan Security Assignment", "Loan Repayment Schedule", "Sales Invoice",
 			"Loan Transfer", "Journal Entry"];
@@ -251,7 +252,6 @@ frappe.ui.form.on('Loan', {
 					"loan_application": frm.doc.loan_application
 				},
 				callback: function (r) {
-					console.log(r.exc)
 					if (!r.exc && r.message) {
 						loan_application_fields.forEach(field => {
 							frm.set_df_property(field, 'read_only', 1);
@@ -259,9 +259,7 @@ frappe.ui.form.on('Loan', {
 						});
 						if (frm.doc.is_secured_loan) {
 							$.each(r.message.proposed_pledges, function(i, d) {
-								console.log(r)
 								let row = frm.add_child("securities");
-								console.log(row)
 								row.loan_security = d.loan_security;
 								row.qty = d.qty;
 								row.loan_security_price = d.loan_security_price;
