@@ -1319,7 +1319,11 @@ class TestLoan(IntegrationTestCase):
 		repayment_entry.submit()
 		repayment_entry.load_from_db()
 
+<<<<<<< HEAD
 		self.assertEqual(repayment_entry.principal_amount_paid, 49754.1)
+=======
+		self.assertEqual(flt(repayment_entry.principal_amount_paid, 1), flt(49726.03, 1))
+>>>>>>> dc5ae3c (chore: Test case precision)
 
 	def test_additional_interest(self):
 		frappe.db.set_value(
