@@ -415,15 +415,10 @@ class TestLoan(IntegrationTestCase):
 		)
 
 		make_loan_disbursement_entry(loan.name, loan.loan_amount, disbursement_date=first_date)
-<<<<<<< HEAD
-		process_loan_interest_accrual_for_loans(posting_date=last_date)
-
-=======
 		process_loan_interest_accrual_for_loans(
 			posting_date=add_days(last_date, 4), loan=loan.name, company="_Test Company"
 		)
 		process_daily_loan_demands(posting_date=add_days(last_date, 5), loan=loan.name)
->>>>>>> 26c807c (chore: Update tests)
 		repayment_entry = create_repayment_entry(
 			loan.name,
 			add_days(last_date, 5),
@@ -835,15 +830,6 @@ class TestLoan(IntegrationTestCase):
 	def test_loan_write_off_limit(self):
 		loan = create_secured_demand_loan(self.applicant2)
 		self.assertEqual(loan.loan_amount, 1000000)
-<<<<<<< HEAD
-		repayment_date = add_days("2019-10-30", 5)
-		no_of_days = date_diff(repayment_date, add_days("2019-10-01", 1))
-
-		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * no_of_days) / (
-			days_in_year(get_datetime("2019-10-01").year) * 100
-		)
-
-=======
 		repayment_date = "2019-11-01"
 
 		accrued_interest_amount = (loan.loan_amount * loan.rate_of_interest * 31) / (36500)
@@ -851,7 +837,6 @@ class TestLoan(IntegrationTestCase):
 			posting_date=add_days("2019-11-01", -1), loan=loan.name, company="_Test Company"
 		)
 		process_daily_loan_demands(posting_date="2019-11-01", loan=loan.name)
->>>>>>> 26c807c (chore: Update tests)
 		# repay 50 less so that it can be automatically written off
 		repayment_entry = create_repayment_entry(
 			loan.name,
@@ -1934,11 +1919,8 @@ def create_loan_product(
 	penalty_receivable_account="Penalty Receivable - _TC",
 	charges_receivable_account="Charges Receivable - _TC",
 	suspense_interest_income="Suspense Income Account - _TC",
-<<<<<<< HEAD
-=======
 	interest_waiver_account="Interest Waiver Account - _TC",
 	write_off_account="Write Off Account - _TC",
->>>>>>> eb10e07 (chore: Update tests)
 	repayment_method=None,
 	repayment_periods=None,
 	repayment_schedule_type="Monthly as per repayment start date",
@@ -1951,10 +1933,6 @@ def create_loan_product(
 	cyclic_day_of_the_month=5,
 ):
 
-<<<<<<< HEAD
-	if not frappe.db.exists("Loan Product", product_code):
-		loan_product = frappe.get_doc(
-=======
 	loan_product = frappe.get_all("Loan Product", filters={"product_name": product_name}, limit=1)
 	if loan_product:
 		loan_product_doc = frappe.get_doc("Loan Product", loan_product[0].name)
@@ -2027,7 +2005,6 @@ def add_or_update_loan_charges(product_name):
 
 	if not frappe.db.exists("Item", charge_type):
 		frappe.get_doc(
->>>>>>> eb10e07 (chore: Update tests)
 			{
 				"doctype": "Loan Product",
 				"company": "_Test Company",
