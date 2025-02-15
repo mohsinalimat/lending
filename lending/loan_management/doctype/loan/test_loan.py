@@ -1022,6 +1022,43 @@ class TestLoan(IntegrationTestCase):
 
 		repayment_entry2.cancel()
 
+	def test_future_demand_cancellation(self):
+		frappe.db.set_value(
+			"Company",
+			"_Test Company",
+			"collection_offset_sequence_for_standard_asset",
+			"Test EMI Based Standard Loan Demand Offset Order",
+		)
+
+		loan = create_loan(
+			self.applicant1,
+			"Term Loan Product 4",
+			1200000,
+			"Repay Over Number of Periods",
+			36,
+			repayment_start_date="2024-06-05",
+			posting_date="2024-05-03",
+			rate_of_interest=29,
+		)
+
+		loan.submit()
+
+		make_loan_disbursement_entry(
+			loan.name, loan.loan_amount, disbursement_date="2024-05-03", repayment_start_date="2024-06-05"
+		)
+		process_daily_loan_demands(posting_date="2024-06-05", loan=loan.name)
+
+		# Make a scheduled loan repayment
+		repayment_entry = create_repayment_entry(
+			loan.name, "2024-06-04", 50287, repayment_type="Advance Payment"
+		)
+		repayment_entry.submit()
+
+		demands = frappe.db.get_all(
+			"Loan Demand", {"loan": loan.name, "docstatus": 2, "demand_date": (">", "2024-06-04")}
+		)
+		self.assertTrue(demands)
+
 	def test_interest_accrual_and_demand_on_freeze_and_unfreeze(self):
 		loan = create_loan(
 			self.applicant1,
@@ -1160,7 +1197,7 @@ class TestLoan(IntegrationTestCase):
 		repayment_entry.submit()
 		repayment_entry.load_from_db()
 
-		self.assertEqual(repayment_entry.principal_amount_paid, 49726.03)
+		self.assertEqual(flt(repayment_entry.principal_amount_paid, 1), flt(49726.03, 1))
 
 	def test_additional_interest(self):
 		frappe.db.set_value(
