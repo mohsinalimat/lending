@@ -310,7 +310,7 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 			out.append(current_date)
 			current_date = add_days(current_date, day_delta)
 		elif loan_accrual_frequency == "Monthly":
-			out.append(current_date)
+			out.append(add_days(current_date, -1))
 			current_date = add_months(current_date, 1)
 	return out
 

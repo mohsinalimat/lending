@@ -1685,18 +1685,17 @@ class TestLoan(IntegrationTestCase):
 
 		set_loan_accrual_frequency("Monthly")
 		process_loan_interest_accrual_for_loans(
-			loan=loan.name, posting_date="2024-11-01", company="_Test Company"
+			loan=loan.name, posting_date="2024-10-31", company="_Test Company"
 		)
 
 		loan_interest_accruals = get_loan_interest_accrual(
 			loan=loan, from_date="2024-09-01", to_date="2024-11-05"
 		)
 		expected_dates = [
-			"2024-09-01",
 			"2024-09-15",
-			"2024-10-01",
+			"2024-09-30",
 			"2024-10-15",
-			"2024-11-01",
+			"2024-10-31",
 		]
 		expected_dates = [getdate(i) for i in expected_dates]
 
