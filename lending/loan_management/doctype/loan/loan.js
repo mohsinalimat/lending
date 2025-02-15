@@ -105,8 +105,35 @@ frappe.ui.form.on('Loan', {
 			}
 		}
 		frm.trigger("toggle_fields");
+		frm.trigger("add_dashboard_stats");
 	},
 
+	add_dashboard_stats: function(frm) {
+		if (frm.doc.docstatus == 1 && frm.doc.status == "Disbursed") {
+			if (frm.doc.__onload && frm.doc.__onload.dashboard_info) {
+				let loan_info = frm.doc.__onload.dashboard_info;
+				frm.dashboard.add_indicator(
+					__("Disbursed Amount: {0}", [
+						format_currency(
+							loan_info["total_principal"],
+							loan_info["currency"]
+						),
+					]),
+					"blue"
+				);
+
+				frm.dashboard.add_indicator(
+					__("Pending Principal: {0}", [
+						format_currency(
+							loan_info["pending_principal"],
+							loan_info["currency"]
+						),
+					]),
+					"orange"
+				);
+			}
+		}
+	},
 	repayment_schedule_type: function(frm) {
 		if (frm.doc.repayment_schedule_type == "Pro-rated calendar months") {
 			frm.set_df_property("repayment_start_date", "label", "Interest Calculation Start Date");

@@ -50,6 +50,10 @@ class Loan(AccountsController):
 		if not self.is_term_loan or (self.is_term_loan and not self.is_new()):
 			self.calculate_totals()
 
+	def onload(self):
+		info = get_dashboard_info(self)
+		self.set_onload("dashboard_info", info)
+
 	def validate_accounts(self):
 		for fieldname in [
 			"payment_account",
@@ -1630,3 +1634,14 @@ def get_voucher_subtypes(doc):
 	}
 
 	return doc.get(voucher_subtypes.get(doc.doctype))
+
+
+def get_dashboard_info(loan):
+	loan_info = {}
+	loan_info["total_principal"] = loan.total_payment - loan.total_interest_payable
+	loan_info["pending_principal"] = (
+		loan.total_payment - loan.total_interest_payable - loan.total_principal_paid
+	)
+	loan_info["currency"] = frappe.get_cached_value("Company", loan.company, "default_currency")
+
+	return loan_info
