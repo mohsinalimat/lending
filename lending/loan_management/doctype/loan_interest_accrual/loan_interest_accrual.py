@@ -254,7 +254,6 @@ def calculate_accrual_amount_for_loans(
 			loan_disbursement=loan_disbursement,
 			process_loan_interest=process_loan_interest,
 			accrual_type=accrual_type,
-			accrual_date=accrual_date,
 		)
 	else:
 		no_of_days = date_diff(posting_date or nowdate(), last_accrual_date)
@@ -326,11 +325,11 @@ def process_loan_interest_accrual_per_schedule(
 	loan_disbursement=None,
 	process_loan_interest=None,
 	accrual_type=None,
-	accrual_date=None,
 ):
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	total_payable_interest = 0
 
+	accrual_date = posting_date
 	for parent in parent_wise_schedules:
 		for payment_date in parent_wise_schedules[parent]:
 			last_accrual_date_for_schedule = (
@@ -368,7 +367,7 @@ def process_loan_interest_accrual_per_schedule(
 						"Normal Interest",
 						loan.rate_of_interest,
 						loan_repayment_schedule=parent,
-						accrual_date=accrual_date,
+						accrual_date=payment_date,
 					)
 			elif is_future_accrual:
 				last_accrual_date = payment_date
@@ -601,7 +600,6 @@ def calculate_penal_interest_for_loans(
 								penal_interest_rate,
 								loan_demand=demand.name,
 								additional_interest=additional_interest,
-								accrual_date=accrual_date,
 								loan_repayment_schedule_detail=demand.repayment_schedule_detail,
 							)
 
