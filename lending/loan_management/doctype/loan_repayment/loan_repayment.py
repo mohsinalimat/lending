@@ -647,7 +647,7 @@ class LoanRepayment(AccountsController):
 
 			if flt(self.amount_paid) > flt(available_deposit):
 				frappe.throw(_("Amount paid cannot be greater than available security deposit"))
-			if flt(self.amount_paid) > flt(self.payable_amount):
+			if flt(self.amount_paid) > flt(self.payable_amount) and not self.loan_adjustment:
 				frappe.throw(
 					_(
 						"The amount paid cannot be greater than the payable amount for Security Deposit Adjustment repayments."
