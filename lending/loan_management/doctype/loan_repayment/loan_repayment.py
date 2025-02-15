@@ -32,7 +32,7 @@ class LoanRepayment(AccountsController):
 
 	def validate(self):
 		charges = None
-		if self.get("payable_charges"):
+		if self.get("payable_charges") and self.repayment_type == "Charge Payment":
 			charges = [d.get("charge_code") for d in self.get("payable_charges")]
 
 		amounts = calculate_amounts(
