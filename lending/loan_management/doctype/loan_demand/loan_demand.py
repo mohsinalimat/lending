@@ -343,6 +343,7 @@ def reverse_demands(
 	loan_repayment_schedule=None,
 	loan_disbursement=None,
 	on_settlement_or_closure=False,
+	future_demands=False,
 ):
 
 	# on settlement or closure, demand should be cleared from next day
@@ -351,6 +352,7 @@ def reverse_demands(
 		posting_date = add_days(posting_date, 1)
 
 	filters = {"loan": loan, "demand_date": (">=", posting_date), "docstatus": 1}
+	or_filters = {}
 
 	if demand_type:
 		filters["demand_type"] = demand_type
@@ -358,8 +360,11 @@ def reverse_demands(
 	if demand_type == "Penalty":
 		filters["demand_type"] = ("in", ("Penalty", "Additional Interest"))
 
-	if loan_repayment_schedule:
+	if loan_repayment_schedule and not future_demands:
 		filters["loan_repayment_schedule"] = loan_repayment_schedule
+	elif loan_repayment_schedule and future_demands:
+		or_filters["loan_repayment_schedule"] = loan_repayment_schedule
+		or_filters["demand_date"] = (">", posting_date)
 
 	if loan_disbursement:
 		filters["loan_disbursement"] = loan_disbursement

@@ -866,6 +866,7 @@ def reverse_loan_interest_accruals(
 	is_npa=0,
 	on_payment_allocation=False,
 	loan_disbursement=None,
+	future_accruals=False,
 ):
 	from lending.loan_management.doctype.loan_write_off.loan_write_off import (
 		write_off_suspense_entries,
@@ -877,14 +878,19 @@ def reverse_loan_interest_accruals(
 		"docstatus": 1,
 	}
 
+	or_filters = {}
+
 	if interest_type:
 		filters["interest_type"] = interest_type
 
 	if interest_type == "Penal Interest":
 		filters["interest_type"] = ("in", ["Penal Interest", "Additional Interest"])
 
-	if loan_repayment_schedule:
+	if loan_repayment_schedule and not future_accruals:
 		filters["loan_repayment_schedule"] = loan_repayment_schedule
+	elif loan_repayment_schedule and future_accruals:
+		or_filters["loan_repayment_schedule"] = loan_repayment_schedule
+		or_filters["posting_date"] = (">", posting_date)
 
 	if loan_disbursement:
 		filters["loan_disbursement"] = loan_disbursement
