@@ -11,8 +11,8 @@ from frappe.utils import (
 	date_diff,
 	flt,
 	get_datetime,
-	get_first_day,
 	get_first_day_of_week,
+	get_last_day,
 	getdate,
 	nowdate,
 )
@@ -299,7 +299,7 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 		current_date = add_days(get_first_day_of_week(last_accrual_date), 7)
 		day_delta = 7
 	elif loan_accrual_frequency == "Monthly":
-		current_date = add_months(get_first_day(last_accrual_date), 1)
+		current_date = get_last_day(last_accrual_date)
 		day_delta = 1
 	else:
 		frappe.throw(_("Loan Accrual Frequency not set in the Company DocType."))
@@ -309,8 +309,8 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 			out.append(current_date)
 			current_date = add_days(current_date, day_delta)
 		elif loan_accrual_frequency == "Monthly":
-			out.append(add_days(current_date, -1))
-			current_date = add_months(current_date, 1)
+			out.append(current_date)
+			current_date = get_last_day(add_months(current_date, 1))
 	return out
 
 
