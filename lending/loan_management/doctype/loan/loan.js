@@ -3,6 +3,9 @@
 
 lending.common.setup_filters("Loan");
 
+const loan_application_fields = ["loan_product", "loan_amount", "repayment_method",
+	"monthly_repayment_amount", "repayment_periods", "rate_of_interest", "is_secured_loan", "applicant", "applicant_type", "maximum_loan_amount"]
+
 frappe.ui.form.on('Loan', {
 	setup: function(frm) {
 		frm.make_methods = {
@@ -12,6 +15,8 @@ frappe.ui.form.on('Loan', {
 		}
 	},
 	onload: function (frm) {
+		frm.trigger("loan_application")
+
 		// Ignore Loan Security Assignment on cancel of loan
 		frm.ignore_doctypes_on_cancel_all = ["Loan Security Assignment", "Loan Repayment Schedule", "Sales Invoice",
 			"Loan Transfer", "Journal Entry"];
@@ -275,14 +280,10 @@ frappe.ui.form.on('Loan', {
 				},
 				callback: function (r) {
 					if (!r.exc && r.message) {
-
-						let loan_fields = ["loan_product", "loan_amount", "repayment_method",
-							"monthly_repayment_amount", "repayment_periods", "rate_of_interest", "is_secured_loan"]
-
-						loan_fields.forEach(field => {
+						loan_application_fields.forEach(field => {
+							frm.set_df_property(field, 'read_only', 1);
 							frm.set_value(field, r.message[field]);
 						});
-
 						if (frm.doc.is_secured_loan) {
 							$.each(r.message.proposed_pledges, function(i, d) {
 								let row = frm.add_child("securities");
@@ -297,6 +298,11 @@ frappe.ui.form.on('Loan', {
 						}
 					}
 				}
+			});
+		}
+		else {
+			loan_application_fields.forEach(field => {
+				frm.set_df_property(field, 'read_only', 0);
 			});
 		}
 	},

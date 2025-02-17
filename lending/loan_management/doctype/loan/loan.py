@@ -291,7 +291,7 @@ class Loan(AccountsController):
 
 	def link_loan_security_assignment(self):
 		if self.is_secured_loan and self.loan_application:
-			lsa, maximum_loan_value = frappe.db.get_value(
+			lsa_details = frappe.db.get_value(
 				"Loan Security Assignment",
 				{
 					"loan_application": self.loan_application,
@@ -301,7 +301,8 @@ class Loan(AccountsController):
 				["name", "maximum_loan_value"],
 			)
 
-			if lsa:
+			if lsa_details:
+				lsa, maximum_loan_value = lsa_details
 				frappe.db.set_value(
 					"Loan Security Assignment",
 					lsa,
