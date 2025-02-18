@@ -51,8 +51,9 @@ class Loan(AccountsController):
 			self.calculate_totals()
 
 	def onload(self):
-		info = get_dashboard_info(self)
-		self.set_onload("dashboard_info", info)
+		if self.docstatus == 1:
+			info = get_dashboard_info(self)
+			self.set_onload("dashboard_info", info)
 
 	def validate_accounts(self):
 		for fieldname in [
@@ -1638,9 +1639,9 @@ def get_voucher_subtypes(doc):
 
 def get_dashboard_info(loan):
 	loan_info = {}
-	loan_info["total_principal"] = loan.total_payment - loan.total_interest_payable
+	loan_info["total_principal"] = flt(loan.total_payment) - flt(loan.total_interest_payable)
 	loan_info["pending_principal"] = (
-		loan.total_payment - loan.total_interest_payable - loan.total_principal_paid
+		flt(loan.total_payment) - flt(loan.total_interest_payable) - flt(loan.total_principal_paid)
 	)
 	loan_info["currency"] = frappe.get_cached_value("Company", loan.company, "default_currency")
 

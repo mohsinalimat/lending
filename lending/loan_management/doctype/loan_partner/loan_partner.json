@@ -18,14 +18,12 @@
   "repayment_schedule_type",
   "effective_date",
   "partner_base_interest_rate",
-  "incremental_interest_applicable",
   "enable_partner_accounting",
-  "interest_increment_percentage",
   "section_break_mpap",
   "column_break_gpwj",
   "organization_type",
-  "primary_address",
   "column_break_iwpj",
+  "primary_address",
   "address_html",
   "section_break_lpnj",
   "shareables",
@@ -81,9 +79,10 @@
    "reqd": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_mpap",
    "fieldtype": "Section Break",
-   "label": "Organization"
+   "label": "Address Details"
   },
   {
    "fieldname": "column_break_iwpj",
@@ -256,17 +255,6 @@
    "options": "Account"
   },
   {
-   "default": "0",
-   "fieldname": "incremental_interest_applicable",
-   "fieldtype": "Check",
-   "label": "Incremental Interest Applicable"
-  },
-  {
-   "fieldname": "interest_increment_percentage",
-   "fieldtype": "Percent",
-   "label": "Interest Increment Percenatge"
-  },
-  {
    "fieldname": "partial_payment_mechanism",
    "fieldtype": "Data",
    "label": "Partial Payment Mechanism"
@@ -280,7 +268,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-11 10:29:14.109028",
+ "modified": "2025-02-16 20:55:48.954408",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Partner",
