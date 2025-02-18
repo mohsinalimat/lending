@@ -11,8 +11,8 @@ from frappe.utils import (
 	date_diff,
 	flt,
 	get_datetime,
-	get_first_day,
 	get_first_day_of_week,
+	get_last_day,
 	getdate,
 	nowdate,
 )
@@ -254,7 +254,6 @@ def calculate_accrual_amount_for_loans(
 			loan_disbursement=loan_disbursement,
 			process_loan_interest=process_loan_interest,
 			accrual_type=accrual_type,
-			accrual_date=accrual_date,
 		)
 	else:
 		no_of_days = date_diff(posting_date or nowdate(), last_accrual_date)
@@ -300,7 +299,7 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 		current_date = add_days(get_first_day_of_week(last_accrual_date), 7)
 		day_delta = 7
 	elif loan_accrual_frequency == "Monthly":
-		current_date = add_months(get_first_day(last_accrual_date), 1)
+		current_date = get_last_day(last_accrual_date)
 		day_delta = 1
 	else:
 		frappe.throw(_("Loan Accrual Frequency not set in the Company DocType."))
@@ -311,7 +310,7 @@ def get_accrual_frequency_breaks(last_accrual_date, accrual_date, loan_accrual_f
 			current_date = add_days(current_date, day_delta)
 		elif loan_accrual_frequency == "Monthly":
 			out.append(current_date)
-			current_date = add_months(current_date, 1)
+			current_date = get_last_day(add_months(current_date, 1))
 	return out
 
 
@@ -326,11 +325,11 @@ def process_loan_interest_accrual_per_schedule(
 	loan_disbursement=None,
 	process_loan_interest=None,
 	accrual_type=None,
-	accrual_date=None,
 ):
 	precision = cint(frappe.db.get_default("currency_precision")) or 2
 	total_payable_interest = 0
 
+	accrual_date = posting_date
 	for parent in parent_wise_schedules:
 		for payment_date in parent_wise_schedules[parent]:
 			last_accrual_date_for_schedule = (
@@ -368,7 +367,7 @@ def process_loan_interest_accrual_per_schedule(
 						"Normal Interest",
 						loan.rate_of_interest,
 						loan_repayment_schedule=parent,
-						accrual_date=accrual_date,
+						accrual_date=payment_date,
 					)
 			elif is_future_accrual:
 				last_accrual_date = payment_date
@@ -557,77 +556,80 @@ def calculate_penal_interest_for_loans(
 			else:
 				from_date = add_days(last_accrual_date, 1)
 
-			no_of_days = date_diff(posting_date, from_date)
+			from_date_for_entry = from_date
+			for current_date in get_accrual_frequency_breaks(from_date, posting_date, "Daily"):
+				# no_of_days = date_diff(posting_date, from_date)
+				from_date_for_entry = add_days(posting_date, -1)
+				# just here for daily penal accruals
+				no_of_days = 1
+				penal_interest_amount = flt(demand.pending_amount) * penal_interest_rate * no_of_days / 36500
 
-			penal_interest_amount = flt(demand.pending_amount) * penal_interest_rate * no_of_days / 36500
+				if flt(penal_interest_amount, precision) > 0:
+					total_penal_interest += penal_interest_amount
 
-			if flt(penal_interest_amount, precision) > 0:
-				total_penal_interest += penal_interest_amount
+					principal_amount = frappe.db.get_value(
+						"Loan Demand",
+						{
+							"loan": loan.name,
+							"repayment_schedule_detail": demand.repayment_schedule_detail,
+							"demand_type": "EMI",
+							"demand_subtype": "Principal",
+						},
+						"outstanding_amount",
+					)
 
-				principal_amount = frappe.db.get_value(
-					"Loan Demand",
-					{
-						"loan": loan.name,
-						"repayment_schedule_detail": demand.repayment_schedule_detail,
-						"demand_type": "EMI",
-						"demand_subtype": "Principal",
-					},
-					"outstanding_amount",
-				)
+					if not principal_amount:
+						continue
 
-				if not principal_amount:
-					continue
+					per_day_interest = get_per_day_interest(
+						principal_amount, loan.rate_of_interest, loan.company, current_date
+					)
+					additional_interest = flt(per_day_interest * no_of_days, precision)
 
-				per_day_interest = get_per_day_interest(
-					principal_amount, loan.rate_of_interest, loan.company, posting_date
-				)
-				additional_interest = flt(per_day_interest * no_of_days, precision)
-
-				if not is_future_accrual:
-					if flt(penal_interest_amount, precision) > 0:
-						make_loan_interest_accrual_entry(
-							loan.name,
-							demand.pending_amount,
-							penal_interest_amount,
-							process_loan_interest,
-							from_date,
-							posting_date,
-							accrual_type,
-							"Penal Interest",
-							penal_interest_rate,
-							loan_demand=demand.name,
-							additional_interest=additional_interest,
-							accrual_date=accrual_date,
-							loan_repayment_schedule_detail=demand.repayment_schedule_detail,
-						)
-
-					if via_background_job:
-						demand_date = add_days(posting_date, 1)
-					else:
-						demand_date = posting_date
-
-					if loan_status != "Written Off":
-						if penal_interest_amount - additional_interest > 0:
-							create_loan_demand(
+					if not is_future_accrual:
+						if flt(penal_interest_amount, precision) > 0:
+							make_loan_interest_accrual_entry(
 								loan.name,
-								demand_date,
-								"Penalty",
-								"Penalty",
-								penal_interest_amount - additional_interest,
-								loan_repayment_schedule=demand.loan_repayment_schedule,
-								loan_disbursement=demand.loan_disbursement,
+								demand.pending_amount,
+								penal_interest_amount,
+								process_loan_interest,
+								from_date_for_entry,
+								current_date,
+								accrual_type,
+								"Penal Interest",
+								penal_interest_rate,
+								loan_demand=demand.name,
+								additional_interest=additional_interest,
+								loan_repayment_schedule_detail=demand.repayment_schedule_detail,
 							)
 
-						if flt(additional_interest, precision) > 0:
-							create_loan_demand(
-								loan.name,
-								demand_date,
-								"Additional Interest",
-								"Additional Interest",
-								additional_interest,
-								loan_repayment_schedule=demand.loan_repayment_schedule,
-								loan_disbursement=demand.loan_disbursement,
-							)
+						if via_background_job:
+							demand_date = add_days(current_date, 1)
+						else:
+							demand_date = current_date
+
+						if loan_status != "Written Off":
+							if penal_interest_amount > additional_interest:
+								create_loan_demand(
+									loan.name,
+									demand_date,
+									"Penalty",
+									"Penalty",
+									penal_interest_amount - additional_interest,
+									loan_repayment_schedule=demand.loan_repayment_schedule,
+									loan_disbursement=demand.loan_disbursement,
+								)
+
+							if flt(additional_interest, precision) > 0:
+								create_loan_demand(
+									loan.name,
+									demand_date,
+									"Additional Interest",
+									"Additional Interest",
+									additional_interest,
+									loan_repayment_schedule=demand.loan_repayment_schedule,
+									loan_disbursement=demand.loan_disbursement,
+								)
 
 	if is_future_accrual:
 		return total_penal_interest
